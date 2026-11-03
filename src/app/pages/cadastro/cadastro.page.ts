@@ -1,16 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { 
-  IonContent, 
-  IonIcon, 
-  IonCheckbox, 
-  MenuController, 
-  ToastController 
+import {
+  IonCheckbox,
+  IonContent,
+  IonIcon,
+  MenuController,
+  ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { checkmarkCircleOutline, checkmarkOutline, arrowForwardOutline, compassOutline } from 'ionicons/icons';
+import {
+  arrowForwardOutline,
+  checkmarkCircleOutline,
+  checkmarkOutline,
+  compassOutline
+} from 'ionicons/icons';
 import { AuthService } from '../../services/auth';
 
 @Component({
@@ -19,45 +25,45 @@ import { AuthService } from '../../services/auth';
   styleUrls: ['./cadastro.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    IonContent, 
-    IonIcon, 
+    CommonModule,
+    ReactiveFormsModule,
+    IonContent,
+    IonIcon,
     IonCheckbox
   ]
 })
 export class CadastroPage implements OnInit {
-// ... o restante do arquivo continua igual!
   form!: FormGroup;
-  modoLogin = false; // Permite alternar entre "Criar conta" e "Entrar"
+  modoLogin = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private menuCtrl: MenuController,
-    private toastCtrl: ToastController
-  ) {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly menuCtrl = inject(MenuController);
+  private readonly toastCtrl = inject(ToastController);
+
+  constructor() {
     addIcons({ checkmarkCircleOutline, checkmarkOutline, arrowForwardOutline, compassOutline });
   }
 
-  ngOnInit() {
-    // Inicializa já com os dados de exemplo da Marina ou vazio (deixei preenchido para facilitar sua demo amanhã!)
+  ngOnInit(): void {
     this.form = this.fb.group({
-      nome: ['Marina Costa', [Validators.required, Validators.minLength(3)]],
-      email: ['marina@startup.com', [Validators.required, Validators.email]],
-      senha: ['12345678a', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
-      termos: [true, [Validators.requiredTrue]]
+      nome: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      senha: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+      ]],
+      termos: [false, [Validators.requiredTrue]]
     });
   }
 
-  // Esconde o Sidemenu ao entrar na tela de Login/Cadastro
-  ionViewWillEnter() {
+  ionViewWillEnter(): void {
     this.menuCtrl.enable(false);
   }
 
-  // Reativa o Sidemenu ao sair para a tela principal do projeto
-  ionViewWillLeave() {
+  ionViewWillLeave(): void {
     this.menuCtrl.enable(true);
   }
 
@@ -66,43 +72,76 @@ export class CadastroPage implements OnInit {
     return nome.split(' ')[0] || 'visitante';
   }
 
-  alternarModo() {
+  alternarModo(): void {
     this.modoLogin = !this.modoLogin;
+
+    const nome = this.form.get('nome');
+    const senha = this.form.get('senha');
+    const termos = this.form.get('termos');
+
+    if (this.modoLogin) {
+      nome?.clearValidators();
+      senha?.setValidators([Validators.required]);
+      termos?.clearValidators();
+    } else {
+      nome?.setValidators([Validators.required, Validators.minLength(3)]);
+      senha?.setValidators([
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+      ]);
+      termos?.setValidators([Validators.requiredTrue]);
+    }
+
+    nome?.updateValueAndValidity();
+    senha?.updateValueAndValidity();
+    termos?.updateValueAndValidity();
   }
 
-  async submeter() {
-    if (this.modoLogin) {
-      const { email, senha } = this.form.value;
-      const sucesso = this.authService.login(email, senha);
-      if (sucesso) {
-        await this.mostrarToast('Login realizado com sucesso!', 'success');
-        this.router.navigate(['/folder/inbox']); // Mude para a rota da sua Home/CRUD
-      } else {
-        await this.mostrarToast('E-mail ou senha não encontrados no localStorage.', 'danger');
-      }
+  async submeter(): Promise<void> {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      await this.mostrarToast('Preencha todos os campos corretamente.', 'warning');
       return;
     }
 
-    if (this.form.valid) {
+    try {
+      if (this.modoLogin) {
+        const { email, senha } = this.form.value;
+        await this.authService.login(email, senha);
+        await this.mostrarToast('Login realizado com sucesso!', 'success');
+        await this.router.navigate(['/folder/inbox']);
+        return;
+      }
+
       const { nome, email, senha, termos } = this.form.value;
-      this.authService.registrar({
+      await this.authService.registrar({
         nome,
         email,
         senha,
         termosAceitos: termos
       });
 
-      await this.mostrarToast('Conta salva no localStorage com sucesso!', 'success');
-      
-      // Redireciona para a rota padrão do Sidemenu (ajuste se sua rota for outra)
-      this.router.navigate(['/sua-trilha']);
-    } else {
-      this.form.markAllAsTouched();
-      await this.mostrarToast('Preencha todos os campos corretamente.', 'warning');
+      await this.mostrarToast('Conta criada com sucesso!', 'success');
+      await this.router.navigate(['/sua-trilha']);
+    } catch (error) {
+      await this.mostrarToast(this.mensagemErro(error), 'danger');
     }
   }
 
-  private async mostrarToast(message: string, color: 'success' | 'warning' | 'danger') {
+  private mensagemErro(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (typeof error.error?.message === 'string') {
+        return error.error.message;
+      }
+      if (error.status === 0) {
+        return 'Não foi possível conectar à API. Verifique se o backend está em execução.';
+      }
+    }
+    return 'Não foi possível autenticar. Tente novamente.';
+  }
+
+  private async mostrarToast(message: string, color: 'success' | 'warning' | 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
       message,
       duration: 2500,

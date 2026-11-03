@@ -1,15 +1,49 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Auth } from './auth';
+import { AuthService, Usuario } from './auth';
 
-describe('Auth', () => {
-  let service: Auth;
+describe('AuthService', () => {
+  let service: AuthService;
+  let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(Auth);
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
+    service = TestBed.inject(AuthService);
+    httpTesting = TestBed.inject(HttpTestingController);
   });
+
+  afterEach(() => httpTesting.verify());
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('registers with the API and keeps only the public account in memory', async () => {
+    const user: Usuario = {
+      id: 'user-id',
+      nome: 'Ana Silva',
+      email: 'ana@example.com',
+      termosAceitos: true,
+      dataCriacao: '2026-01-01T00:00:00.000Z',
+      trilhaEscolhida: 'execucao'
+    };
+
+    const registration = service.registrar({
+      nome: user.nome,
+      email: user.email,
+      senha: 'senha123',
+      termosAceitos: true
+    });
+    const request = httpTesting.expectOne('http://localhost:3000/api/auth/register');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.withCredentials).toBe(true);
+    request.flush({ user });
+
+    expect(await registration).toEqual(user);
+    expect(service.getUsuarioLogado()).toEqual(user);
   });
 });

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
@@ -28,17 +29,17 @@ import { IonHeader, IonToolbar, IonTitle } from "@ionic/angular";
   standalone: true,
   imports: [IonTitle, IonToolbar, IonHeader, CommonModule, IonContent, IonIcon]
 })
-export class SuaTrilhaPage implements OnInit {
+export class SuaTrilhaPage {
 // ... o restante do arquivo continua igual!
   usuarioLogado: Usuario | null = null;
   trilhaSelecionada: 'execucao' | 'fundamentos' | null = null;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private menuCtrl: MenuController,
-    private toastCtrl: ToastController
-  ) {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly menuCtrl = inject(MenuController);
+  private readonly toastCtrl = inject(ToastController);
+
+  constructor() {
     addIcons({
       searchOutline,
       checkmarkOutline,
@@ -51,16 +52,19 @@ export class SuaTrilhaPage implements OnInit {
     });
   }
 
-  ngOnInit() {
-    this.usuarioLogado = this.authService.getUsuarioLogado();
-    if (this.usuarioLogado?.trilhaEscolhida) {
-      this.trilhaSelecionada = this.usuarioLogado.trilhaEscolhida;
-    }
-  }
-
-  ionViewWillEnter() {
+  async ionViewWillEnter(): Promise<void> {
     this.menuCtrl.enable(false);
-    this.usuarioLogado = this.authService.getUsuarioLogado();
+    try {
+      this.usuarioLogado = await this.authService.restaurarSessao();
+      if (!this.usuarioLogado) {
+        await this.router.navigate(['/cadastro']);
+        return;
+      }
+      this.trilhaSelecionada = this.usuarioLogado.trilhaEscolhida;
+    } catch {
+      await this.mostrarToast('Não foi possível carregar sua conta. Verifique a conexão com a API.', 'danger');
+      await this.router.navigate(['/cadastro']);
+    }
   }
 
   ionViewWillLeave() {
@@ -69,41 +73,53 @@ export class SuaTrilhaPage implements OnInit {
 
   // Gera as iniciais (ex: "Marina Costa" -> "MC")
   get iniciaisUsuario(): string {
-    const nome = this.usuarioLogado?.nome || 'Marina Costa';
+    const nome = this.usuarioLogado?.nome || 'Usuário';
     const partes = nome.trim().split(' ');
     if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
   }
 
-  selecionarTrilha(trilha: 'execucao' | 'fundamentos') {
+  selecionarTrilha(trilha: 'execucao' | 'fundamentos'): void {
     this.trilhaSelecionada = trilha;
   }
 
-  voltar() {
+  voltar(): void {
     this.router.navigate(['/cadastro']);
   }
 
-  async continuar() {
+  async continuar(): Promise<void> {
     if (!this.trilhaSelecionada) return;
 
-    // Faz o UPDATE no localStorage caso exista um usuário logado
-    if (this.usuarioLogado) {
-      const usuarioAtualizado: Usuario = {
-        ...this.usuarioLogado,
-        trilhaEscolhida: this.trilhaSelecionada
-      };
-      this.authService.atualizarUsuario(usuarioAtualizado);
+    if (!this.usuarioLogado) {
+      await this.router.navigate(['/cadastro']);
+      return;
     }
 
+    try {
+      this.usuarioLogado = await this.authService.atualizarUsuario({
+        ...this.usuarioLogado,
+        trilhaEscolhida: this.trilhaSelecionada
+      });
+      await this.mostrarToast(
+        `Trilha "${this.trilhaSelecionada === 'execucao' ? 'Da ideia à execução' : 'Comece pelos fundamentos'}" salva.`,
+        'success'
+      );
+      await this.router.navigate(['/folder/inbox']);
+    } catch (error) {
+      const message = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
+        ? error.error.message
+        : 'Não foi possível salvar sua trilha. Verifique a conexão com a API.';
+      await this.mostrarToast(message, 'danger');
+    }
+  }
+
+  private async mostrarToast(message: string, color: 'success' | 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
-      message: `Trilha "${this.trilhaSelecionada === 'execucao' ? 'Da ideia à execução' : 'Comece pelos fundamentos'}" salva no localStorage!`,
+      message,
       duration: 2500,
-      color: 'success',
+      color,
       position: 'top'
     });
     await toast.present();
-
-    // Redireciona para a página seguinte (ex: Home/Sidemenu ou Diagnóstico)
-    this.router.navigate(['/folder/inbox']);
   }
 }

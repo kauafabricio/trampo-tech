@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,11 +21,10 @@ import {
   checkmarkOutline,
   timeOutline,
   createOutline,
-  trashOutline,
-  personAddOutline,
   closeOutline,
   arrowUpOutline,
-  compassOutline
+  compassOutline,
+  logOutOutline
 } from 'ionicons/icons';
 import { AuthService, Usuario } from '../services/auth';
 
@@ -46,11 +46,10 @@ export interface MensagemTutor {
     IonIcon
   ],
 })
-export class FolderPage implements OnInit {
+export class FolderPage {
   abaAtiva: 'visao-geral' | 'tutor' | 'avaliacoes' | 'perfil' = 'visao-geral';
 
   usuarioLogado: Usuario | null = null;
-  usuarios: Usuario[] = [];
 
   // Estado do Tutor IA
   conceitoSelecionado: string = 'Criar uma hipótese';
@@ -66,12 +65,12 @@ export class FolderPage implements OnInit {
     trilhaEscolhida: 'execucao'
   };
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private menuCtrl: MenuController,
-    private toastCtrl: ToastController
-  ) {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly menuCtrl = inject(MenuController);
+  private readonly toastCtrl = inject(ToastController);
+
+  constructor() {
     addIcons({
       searchOutline,
       gitNetworkOutline,
@@ -83,26 +82,29 @@ export class FolderPage implements OnInit {
       checkmarkOutline,
       timeOutline,
       createOutline,
-      trashOutline,
-      personAddOutline,
       closeOutline,
       arrowUpOutline,
-      compassOutline
+      compassOutline,
+      logOutOutline
     });
   }
 
-  ngOnInit() {
-    this.carregarDados();
-  }
-
-  ionViewWillEnter() {
+  async ionViewWillEnter(): Promise<void> {
     this.menuCtrl.enable(false);
-    this.carregarDados();
+    try {
+      await this.carregarDados();
+    } catch {
+      await this.mostrarToast('Não foi possível carregar sua conta. Verifique a conexão com a API.', 'danger');
+      await this.router.navigate(['/cadastro']);
+    }
   }
 
-  carregarDados() {
-    this.usuarioLogado = this.authService.getUsuarioLogado();
-    this.usuarios = this.authService.listarUsuarios();
+  async carregarDados(): Promise<void> {
+    this.usuarioLogado = await this.authService.restaurarSessao();
+    if (!this.usuarioLogado) {
+      await this.router.navigate(['/cadastro']);
+      return;
+    }
 
     const chatSalvo = localStorage.getItem(this.CHAT_STORAGE_KEY);
     if (chatSalvo) {
@@ -119,7 +121,7 @@ export class FolderPage implements OnInit {
   }
 
   get iniciaisUsuario(): string {
-    const nome = this.usuarioLogado?.nome || 'Marina Costa';
+    const nome = this.usuarioLogado?.nome || 'Usuário';
     const partes = nome.trim().split(' ');
     if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
@@ -168,7 +170,7 @@ export class FolderPage implements OnInit {
     });
 
     localStorage.setItem(this.CHAT_STORAGE_KEY, JSON.stringify(this.mensagensTutor));
-    await this.mostrarToast('Contexto guardado no localStorage!', 'success');
+    await this.mostrarToast('Contexto guardado neste dispositivo.', 'success');
   }
 
   // --- Funções do CRUD (em "Editar perfil") ---
@@ -185,7 +187,7 @@ export class FolderPage implements OnInit {
     this.editandoId = null;
   }
 
-  async salvarEdicao(userOriginal: Usuario) {
+  async salvarEdicao(userOriginal: Usuario): Promise<void> {
     if (!this.formEdicao.nome.trim() || !this.formEdicao.email.trim()) {
       await this.mostrarToast('Preencha o nome e o e-mail.', 'warning');
       return;
@@ -198,23 +200,25 @@ export class FolderPage implements OnInit {
       trilhaEscolhida: this.formEdicao.trilhaEscolhida
     };
 
-    this.authService.atualizarUsuario(atualizado);
-    this.editandoId = null;
-    this.carregarDados();
-    await this.mostrarToast('Perfil atualizado com sucesso no localStorage!', 'success');
-  }
-
-  async excluirUsuario(id: string) {
-    this.authService.removerUsuario(id);
-    if (this.usuarioLogado?.id === id) {
-      this.authService.logout();
+    try {
+      this.usuarioLogado = await this.authService.atualizarUsuario(atualizado);
+      this.editandoId = null;
+      await this.mostrarToast('Perfil atualizado com sucesso.', 'success');
+    } catch (error) {
+      const message = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
+        ? error.error.message
+        : 'Não foi possível atualizar o perfil. Verifique a conexão com a API.';
+      await this.mostrarToast(message, 'danger');
     }
-    this.carregarDados();
-    await this.mostrarToast('Utilizador removido do localStorage!', 'danger');
   }
 
-  irParaCadastro() {
-    this.router.navigate(['/cadastro']);
+  async sair(): Promise<void> {
+    try {
+      await this.authService.logout();
+      await this.router.navigate(['/cadastro']);
+    } catch {
+      await this.mostrarToast('Não foi possível encerrar a sessão. Tente novamente.', 'danger');
+    }
   }
 
   private async mostrarToast(message: string, color: 'success' | 'warning' | 'danger') {

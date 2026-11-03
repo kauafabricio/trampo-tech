@@ -1,71 +1,89 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  senha?: string;
   termosAceitos: boolean;
   dataCriacao: string;
-  trilhaEscolhida?: 'execucao' | 'fundamentos';
+  trilhaEscolhida: 'execucao' | 'fundamentos';
+}
+
+interface UsuarioResponse {
+  user: Usuario;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly USERS_KEY = 'trilha_usuarios';
-  private readonly LOGGED_USER_KEY = 'trilha_usuario_logado';
+  private readonly authUrl = `${environment.apiUrl}/auth`;
+  private usuarioLogado: Usuario | null = null;
+  private readonly http = inject(HttpClient);
 
-  registrar(dados: Omit<Usuario, 'id' | 'dataCriacao'>): Usuario {
-    const usuarios = this.listarUsuarios();
-    const novoUsuario: Usuario = {
-      ...dados,
-      id: Date.now().toString(),
-      dataCriacao: new Date().toISOString(),
-      trilhaEscolhida: 'execucao'
-    };
-
-    usuarios.push(novoUsuario);
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(usuarios));
-    localStorage.setItem(this.LOGGED_USER_KEY, JSON.stringify(novoUsuario));
-    return novoUsuario;
+  async registrar(dados: Pick<Usuario, 'nome' | 'email' | 'termosAceitos'> & { senha: string }): Promise<Usuario> {
+    const response = await firstValueFrom(
+      this.http.post<UsuarioResponse>(`${this.authUrl}/register`, dados, { withCredentials: true })
+    );
+    this.usuarioLogado = response.user;
+    return response.user;
   }
 
-  listarUsuarios(): Usuario[] {
-    const data = localStorage.getItem(this.USERS_KEY);
-    return data ? JSON.parse(data) : [];
+  async login(email: string, senha: string): Promise<Usuario> {
+    const response = await firstValueFrom(
+      this.http.post<UsuarioResponse>(
+        `${this.authUrl}/login`,
+        { email, senha },
+        { withCredentials: true }
+      )
+    );
+    this.usuarioLogado = response.user;
+    return response.user;
+  }
+
+  async logout(): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${this.authUrl}/logout`, {}, { withCredentials: true })
+    );
+    this.usuarioLogado = null;
+  }
+
+  async restaurarSessao(): Promise<Usuario | null> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<UsuarioResponse>(`${this.authUrl}/me`, { withCredentials: true })
+      );
+      this.usuarioLogado = response.user;
+      return response.user;
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+        this.usuarioLogado = null;
+        return null;
+      }
+      throw error;
+    }
   }
 
   getUsuarioLogado(): Usuario | null {
-    const data = localStorage.getItem(this.LOGGED_USER_KEY);
-    return data ? JSON.parse(data) : null;
+    return this.usuarioLogado;
   }
 
-  atualizarUsuario(usuarioAtualizado: Usuario): void {
-    const usuarios = this.listarUsuarios().map(u =>
-      u.id === usuarioAtualizado.id ? usuarioAtualizado : u
+  async atualizarUsuario(usuarioAtualizado: Usuario): Promise<Usuario> {
+    const response = await firstValueFrom(
+      this.http.patch<UsuarioResponse>(
+        `${this.authUrl}/me`,
+        {
+          nome: usuarioAtualizado.nome,
+          email: usuarioAtualizado.email,
+          trilhaEscolhida: usuarioAtualizado.trilhaEscolhida
+        },
+        { withCredentials: true }
+      )
     );
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(usuarios));
-    localStorage.setItem(this.LOGGED_USER_KEY, JSON.stringify(usuarioAtualizado));
-  }
-
-  removerUsuario(id: string): void {
-    const usuarios = this.listarUsuarios().filter(u => u.id !== id);
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(usuarios));
-  }
-
-  login(email: string, senha?: string): boolean {
-    const usuarios = this.listarUsuarios();
-    const user = usuarios.find(u => u.email === email && u.senha === senha);
-    if (user) {
-      localStorage.setItem(this.LOGGED_USER_KEY, JSON.stringify(user));
-      return true;
-    }
-    return false;
-  }
-
-  logout(): void {
-    localStorage.removeItem(this.LOGGED_USER_KEY);
+    this.usuarioLogado = response.user;
+    return response.user;
   }
 }

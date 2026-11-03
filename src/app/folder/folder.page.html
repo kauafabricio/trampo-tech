@@ -17,12 +17,17 @@
 
         <div class="env-pill">
           <span class="env-dot"></span>
-          <span>Ambiente de exemplo</span>
+          <span>Conta autenticada</span>
         </div>
 
         <div class="avatar-circle" (click)="selecionarAba('perfil')" title="Ver / Editar Perfil">
           {{ iniciaisUsuario }}
         </div>
+
+        <button type="button" class="search-btn" (click)="sair()">
+          <ion-icon name="log-out-outline"></ion-icon>
+          <span>Sair</span>
+        </button>
       </div>
     </header>
 
@@ -467,52 +472,54 @@
       </main>
 
       <!-- ========================================================= -->
-      <!-- ABA 3 & 4: EDITAR PERFIL / AVALIAÇÕES (PAINEL CRUD)       -->
+      <!-- ABA 3 & 4: EDITAR PERFIL / AVALIAÇÕES                    -->
       <!-- ========================================================= -->
       <main class="content-area" *ngIf="abaAtiva === 'perfil' || abaAtiva === 'avaliacoes'">
         <div class="page-header-row">
           <div>
-            <span class="eyebrow">PERSISTÊNCIA DE DADOS • LOCALSTORAGE</span>
-            <h1 class="page-title">Gerir Perfil e Utilizadores (CRUD)</h1>
+            <span class="eyebrow">CONTA • MONGODB</span>
+            <h1 class="page-title">Seu perfil</h1>
             <p class="page-subtitle">
-              Aqui podes visualizar, atualizar (Update) ou remover (Delete) os dados guardados no <code>localStorage</code>.
+              Atualize os dados da sua conta autenticada.
             </p>
           </div>
-          <button type="button" class="btn-start-study" style="width: auto; padding: 0 20px;" (click)="irParaCadastro()">
-            + Novo Utilizador (Create)
-          </button>
         </div>
 
         <div class="crud-list">
-          <div class="crud-item" *ngFor="let u of usuarios">
-            <div class="crud-view" *ngIf="editandoId !== u.id">
-              <div>
-                <h3>{{ u.nome }}</h3>
-                <p>{{ u.email }} • Trilha: <strong>{{ u.trilhaEscolhida === 'fundamentos' ? 'Comece pelos fundamentos' : 'Da ideia à execução' }}</strong></p>
-              </div>
-              <div class="crud-buttons">
-                <button type="button" class="btn-tutor-outline" (click)="iniciarEdicao(u)">Editar</button>
-                <button type="button" class="btn-delete" (click)="excluirUsuario(u.id)">Excluir</button>
-              </div>
-            </div>
+          @if (usuarioLogado; as u) {
+            <div class="crud-item">
+              @if (editandoId !== u.id) {
+                <div class="crud-view">
+                  <div>
+                    <h3>{{ u.nome }}</h3>
+                    <p>{{ u.email }} • Trilha: <strong>{{ u.trilhaEscolhida === 'fundamentos' ? 'Comece pelos fundamentos' : 'Da ideia à execução' }}</strong></p>
+                  </div>
+                  <div class="crud-buttons">
+                    <button type="button" class="btn-tutor-outline" (click)="iniciarEdicao(u)">Editar</button>
+                  </div>
+                </div>
+              }
 
-            <div class="crud-edit" *ngIf="editandoId === u.id">
-              <div class="crud-inputs">
-                <input type="text" [(ngModel)]="formEdicao.nome" placeholder="Nome" />
-                <input type="email" [(ngModel)]="formEdicao.email" placeholder="E-mail" />
-                <select [(ngModel)]="formEdicao.trilhaEscolhida">
-                  <option value="execucao">Da ideia à execução</option>
-                  <option value="fundamentos">Comece pelos fundamentos</option>
-                </select>
-              </div>
-              <div class="crud-buttons">
-                <button type="button" class="btn-tutor-outline" (click)="cancelarEdicao()">Cancelar</button>
-                <button type="button" class="btn-start-study" style="width: auto; padding: 0 20px;" (click)="salvarEdicao(u)">
-                  Guardar no localStorage
-                </button>
-              </div>
+              @if (editandoId === u.id) {
+                <div class="crud-edit">
+                  <div class="crud-inputs">
+                    <input type="text" [(ngModel)]="formEdicao.nome" placeholder="Nome" />
+                    <input type="email" [(ngModel)]="formEdicao.email" placeholder="E-mail" />
+                    <select [(ngModel)]="formEdicao.trilhaEscolhida">
+                      <option value="execucao">Da ideia à execução</option>
+                      <option value="fundamentos">Comece pelos fundamentos</option>
+                    </select>
+                  </div>
+                  <div class="crud-buttons">
+                    <button type="button" class="btn-tutor-outline" (click)="cancelarEdicao()">Cancelar</button>
+                    <button type="button" class="btn-start-study" style="width: auto; padding: 0 20px;" (click)="salvarEdicao(u)">
+                      Salvar perfil
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
       </main>
 
