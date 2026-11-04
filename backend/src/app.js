@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb';
 import {
   normalizeEmail,
   validateLogin,
+  validateDiagnostic,
   validateProfile,
   validateRegistration
 } from './validation.js';
@@ -21,7 +22,7 @@ function cookieOptions(production) {
     httpOnly: true,
     secure: production,
     sameSite: 'lax',
-    path: '/api/auth'
+    path: '/api'
   };
 }
 
@@ -33,6 +34,16 @@ function publicUser(user) {
     termosAceitos: user.termosAceitos,
     dataCriacao: user.dataCriacao.toISOString(),
     trilhaEscolhida: user.trilhaEscolhida
+  };
+}
+
+function publicDiagnostic(diagnostic) {
+  return {
+    versaoQuestionario: diagnostic.versaoQuestionario,
+    respostas: diagnostic.respostas,
+    resultado: diagnostic.resultado,
+    criadoEm: diagnostic.criadoEm.toISOString(),
+    atualizadoEm: diagnostic.atualizadoEm.toISOString()
   };
 }
 
@@ -52,9 +63,9 @@ function sendError(res, status, message) {
   return res.status(status).json({ message });
 }
 
-export function createApp({ users, jwtSecret, clientOrigin, production = false }) {
-  if (!users || !jwtSecret || !clientOrigin) {
-    throw new Error('Users collection, JWT secret, and client origin are required.');
+export function createApp({ users, diagnoses, jwtSecret, clientOrigin, production = false }) {
+  if (!users || !diagnoses || !jwtSecret || !clientOrigin) {
+    throw new Error('Users and diagnoses collections, JWT secret, and client origin are required.');
   }
 
   const app = express();
@@ -195,7 +206,45 @@ export function createApp({ users, jwtSecret, clientOrigin, production = false }
     return res.json({ user: publicUser(user) });
   });
 
+  const diagnosisRouter = express.Router();
+
+  diagnosisRouter.get('/', requireAuth, async (req, res) => {
+    const diagnostic = await diagnoses.findOne({ userId: req.authUser._id });
+    return res.json({ diagnostico: diagnostic ? publicDiagnostic(diagnostic) : null });
+  });
+
+  diagnosisRouter.post('/', requireAuth, async (req, res) => {
+    const validation = validateDiagnostic(req.body);
+    if (validation.error) {
+      return sendError(res, 400, validation.error);
+    }
+
+    const now = new Date();
+    await diagnoses.updateOne(
+      { userId: req.authUser._id },
+      {
+        $set: {
+          versaoQuestionario: 1,
+          respostas: validation.value.respostas,
+          resultado: validation.value.resultado,
+          atualizadoEm: now
+        },
+        $setOnInsert: {
+          userId: req.authUser._id,
+          criadoEm: now
+        }
+      },
+      { upsert: true }
+    );
+    const diagnostic = await diagnoses.findOne({ userId: req.authUser._id });
+    if (!diagnostic) {
+      throw new Error('Saved diagnosis could not be retrieved.');
+    }
+    return res.status(201).json({ diagnostico: publicDiagnostic(diagnostic) });
+  });
+
   app.use('/api/auth', authRouter);
+  app.use('/api/diagnostico', diagnosisRouter);
   app.use((_req, res) => sendError(res, 404, 'Rota não encontrada.'));
   app.use((error, _req, res, _next) => {
     if (error?.type === 'entity.parse.failed') {

@@ -1,0 +1,151 @@
+<ion-content [fullscreen]="true" class="trilha-bg">
+  <div class="page-wrapper">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="logo">trilha</span>
+        <span class="divider">|</span>
+        <span class="tagline">Conhecimento que vira ação.</span>
+      </div>
+      <div class="top-bar-right">
+        <span class="secure-label">Seu ponto de partida</span>
+      </div>
+    </header>
+
+    <div class="stepper-bar" aria-label="Etapas de criação da trilha">
+      <div class="step completed">
+        <span class="step-circle"><ion-icon name="checkmark-outline"></ion-icon></span>
+        <span class="step-label">Sua conta</span>
+      </div>
+      <div class="step active">
+        <span class="step-circle">2</span>
+        <span class="step-label">Diagnóstico</span>
+      </div>
+      <div class="step">
+        <span class="step-circle">3</span>
+        <span class="step-label">Sua trilha</span>
+      </div>
+    </div>
+
+    <main class="main-container">
+      <section class="info-card">
+        <div class="badge-top">
+          <ion-icon name="compass-outline"></ion-icon>
+          <span>SEU CONTEXTO NO CENTRO</span>
+        </div>
+        <h1 class="hero-title">Vamos entender como sua equipe trabalha.</h1>
+        <p class="hero-subtitle">
+          Suas respostas ajudam a identificar oportunidades de melhoria em gestão de projetos e orientar seus próximos passos.
+        </p>
+
+        <div class="mindmap" aria-hidden="true">
+          <svg class="mindmap-lines" viewBox="0 0 400 180" preserveAspectRatio="none">
+            <line x1="90" y1="35" x2="200" y2="90" />
+            <line x1="310" y1="35" x2="200" y2="90" />
+            <line x1="90" y1="145" x2="200" y2="90" />
+            <line x1="310" y1="145" x2="200" y2="90" />
+          </svg>
+          <div class="node-row">
+            <div class="node-white">Planejamento</div>
+            <div class="node-white">Execução</div>
+          </div>
+          <div class="node-center-row"><div class="node-orange">Sua startup</div></div>
+          <div class="node-row">
+            <div class="node-white">Processos</div>
+            <div class="node-white">Aprendizado</div>
+          </div>
+        </div>
+
+        <p class="card-footer-text">
+          Não existe resposta certa ou errada. Queremos conhecer a realidade da sua equipe hoje.
+        </p>
+      </section>
+
+      <section class="question-section" aria-live="polite">
+        <div class="question-heading">
+          <span class="eyebrow">{{ questaoAtual.secao }}</span>
+          <span class="question-count">Pergunta {{ indiceAtual + 1 }} de {{ totalQuestoes }}</span>
+        </div>
+        <div
+          class="progress-track"
+          role="progressbar"
+          [attr.aria-valuenow]="indiceAtual + 1"
+          [attr.aria-valuemin]="1"
+          [attr.aria-valuemax]="totalQuestoes"
+          [attr.aria-label]="'Pergunta ' + (indiceAtual + 1) + ' de ' + totalQuestoes">
+          <span [style.width.%]="progressoPercentual"></span>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="avancar()">
+          <h2 class="question-title">{{ questaoAtual.pergunta }}</h2>
+
+          @if (questaoAtual.opcoes) {
+            <div class="options-list" role="radiogroup" [attr.aria-label]="questaoAtual.pergunta">
+              @for (opcao of questaoAtual.opcoes; track opcao.valor) {
+                <label class="option-card" [class.selected]="respostaAtual === opcao.valor">
+                  <input
+                    type="radio"
+                    [formControlName]="questaoAtual.id"
+                    [value]="opcao.valor"
+                    [attr.aria-label]="opcao.texto" />
+                  <span class="radio-mark" aria-hidden="true"></span>
+                  <span class="option-text">{{ opcao.texto }}</span>
+                </label>
+              }
+            </div>
+          } @else {
+            <div class="answer-field">
+              @if (questaoAtual.id === 'resultadoDesejado') {
+                <textarea
+                  formControlName="resultadoDesejado"
+                  rows="5"
+                  maxlength="1000"
+                  [attr.aria-label]="questaoAtual.pergunta"
+                  placeholder="Escreva sua resposta aqui..."></textarea>
+              } @else {
+                <textarea
+                  formControlName="problemaRecorrente"
+                  rows="5"
+                  maxlength="1000"
+                  [attr.aria-label]="questaoAtual.pergunta"
+                  placeholder="Escreva sua resposta aqui..."></textarea>
+              }
+              <span class="character-count">{{ respostaAtual.length }}/1000 caracteres</span>
+            </div>
+          }
+
+          <p class="privacy-note">
+            Evite incluir nomes, dados pessoais ou informações confidenciais da sua empresa.
+          </p>
+
+          <div class="actions-row">
+            @if (indiceAtual > 0) {
+              <button type="button" class="btn-back" (click)="voltar()" [disabled]="salvando">
+                <ion-icon name="arrow-back-outline"></ion-icon>
+                <span>Voltar</span>
+              </button>
+            } @else {
+              <span class="back-placeholder"></span>
+            }
+            <button type="submit" class="btn-continue" [disabled]="salvando">
+              <span>
+                @if (salvando) {
+                  Salvando...
+                } @else if (indiceAtual === totalQuestoes - 1) {
+                  Salvar diagnóstico
+                } @else {
+                  Continuar
+                }
+              </span>
+              <ion-icon name="arrow-forward-outline"></ion-icon>
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="bottom-bar">
+      <span>trilha • Gestão de projetos para startups</span>
+      <span>Um passo de cada vez.</span>
+    </footer>
+  </div>
+</ion-content>

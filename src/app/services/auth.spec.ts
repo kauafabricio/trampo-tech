@@ -37,7 +37,7 @@ describe('AuthService', () => {
       senha: 'senha123',
       termosAceitos: true
     });
-    const request = httpTesting.expectOne('http://localhost:3000/api/auth/register');
+    const request = httpTesting.expectOne('/api/auth/register');
 
     expect(request.request.method).toBe('POST');
     expect(request.request.withCredentials).toBe(true);
@@ -58,7 +58,7 @@ describe('AuthService', () => {
     };
 
     const login = service.login('ana@example.com', 'senha123');
-    const request = httpTesting.expectOne('http://localhost:3000/api/auth/login');
+    const request = httpTesting.expectOne('/api/auth/login');
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ email: 'ana@example.com', senha: 'senha123' });

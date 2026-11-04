@@ -16,12 +16,16 @@ browser JavaScript.
 4. Keep `.env` private; never commit or send its contents.
 5. Run `npm install`, then `npm start` (or `npm run dev`).
 6. In another terminal, run the Angular app with `npm start` from the repository
-   root.
+   root. The development server proxies `/api` requests to `http://localhost:3000`,
+   keeping browser requests and session cookies on the app's origin.
 
 The API creates a unique index on `users.email` at startup. Configure
 `CLIENT_ORIGIN` to the exact origin serving the Angular app. In production, use
 HTTPS and keep the client and API on the same site, or configure the deployment
 and cookie policy for the required cross-site setup.
+
+Initial assessment answers and their maturity scores are stored in the
+`diagnoses` collection, with one document per user.
 
 ## Routes
 
@@ -31,3 +35,5 @@ and cookie policy for the required cross-site setup.
 - `GET /api/auth/me` — return the authenticated account.
 - `PATCH /api/auth/me` — update the authenticated account's name, email, and
   selected learning track.
+- `GET /api/diagnostico` — return the authenticated user's saved assessment.
+- `POST /api/diagnostico` — validate and save the assessment answers and scores.

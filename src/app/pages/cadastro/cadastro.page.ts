@@ -111,7 +111,7 @@ export class CadastroPage implements OnInit {
       });
 
       await this.mostrarToast('Conta criada com sucesso!', 'success');
-      await this.router.navigate(['/sua-trilha']);
+      await this.router.navigate(['/diagnostico-inicial']);
     } catch (error) {
       await this.mostrarToast(this.mensagemErro(error), 'danger');
     }
@@ -119,20 +119,32 @@ export class CadastroPage implements OnInit {
 
   private mensagemErro(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) {
+        return 'Não conseguimos nos conectar ao serviço de contas. Confira sua conexão com a internet e tente novamente em instantes.';
+      }
+      if (error.status === 401) {
+        return 'Não foi possível entrar com esses dados. Confira seu e-mail e sua senha e tente novamente.';
+      }
+      if (error.status === 409) {
+        return 'Já existe uma conta com este e-mail. Entre na sua conta ou use outro e-mail.';
+      }
+      if (error.status === 429) {
+        return 'Houve muitas tentativas em pouco tempo. Aguarde alguns minutos antes de tentar novamente.';
+      }
+      if (error.status >= 500) {
+        return 'Tivemos um imprevisto ao processar seu pedido. Seus dados não foram alterados. Tente novamente em alguns minutos.';
+      }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
-      if (error.status === 0) {
-        return 'Não foi possível conectar à API. Verifique se o backend está em execução.';
-      }
     }
-    return 'Não foi possível autenticar. Tente novamente.';
+    return 'Não foi possível concluir agora. Tente novamente e, se o problema continuar, fale com nosso suporte.';
   }
 
   private async mostrarToast(message: string, color: 'success' | 'warning' | 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
       message,
-      duration: 2500,
+      duration: color === 'danger' ? 6000 : 2500,
       color,
       position: 'top'
     });

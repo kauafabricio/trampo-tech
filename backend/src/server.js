@@ -23,9 +23,11 @@ await client.connect();
 
 const db = client.db(MONGODB_DB_NAME);
 await db.collection('users').createIndex({ email: 1 }, { unique: true });
+await db.collection('diagnoses').createIndex({ userId: 1 }, { unique: true });
 
 const app = createApp({
   users: db.collection('users'),
+  diagnoses: db.collection('diagnoses'),
   jwtSecret: AUTH_JWT_SECRET,
   clientOrigin: CLIENT_ORIGIN,
   production: NODE_ENV === 'production'
