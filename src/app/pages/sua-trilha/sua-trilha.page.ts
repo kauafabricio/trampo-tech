@@ -1,16 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
-  IonContent, 
-  IonIcon, 
-  MenuController, 
-  ToastController 
+  IonContent,
+  IonIcon,
+  ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { 
-  searchOutline, 
   checkmarkOutline, 
   compassOutline, 
   ellipseOutline, 
@@ -20,28 +17,24 @@ import {
   arrowForwardOutline
 } from 'ionicons/icons';
 import { AuthService, Usuario } from '../../services/auth';
-import { IonHeader, IonToolbar, IonTitle } from "@ionic/angular";
 
 @Component({
   selector: 'app-sua-trilha',
   templateUrl: './sua-trilha.page.html',
   styleUrls: ['./sua-trilha.page.scss'],
   standalone: true,
-  imports: [IonTitle, IonToolbar, IonHeader, CommonModule, IonContent, IonIcon]
+  imports: [IonContent, IonIcon]
 })
 export class SuaTrilhaPage {
-// ... o restante do arquivo continua igual!
   usuarioLogado: Usuario | null = null;
   trilhaSelecionada: 'execucao' | 'fundamentos' | null = null;
 
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly menuCtrl = inject(MenuController);
   private readonly toastCtrl = inject(ToastController);
 
   constructor() {
     addIcons({
-      searchOutline,
       checkmarkOutline,
       compassOutline,
       ellipseOutline,
@@ -53,7 +46,6 @@ export class SuaTrilhaPage {
   }
 
   async ionViewWillEnter(): Promise<void> {
-    this.menuCtrl.enable(false);
     try {
       this.usuarioLogado = await this.authService.restaurarSessao();
       if (!this.usuarioLogado) {
@@ -65,10 +57,6 @@ export class SuaTrilhaPage {
       await this.mostrarToast('Não foi possível carregar sua conta. Verifique a conexão com a API.', 'danger');
       await this.router.navigate(['/cadastro']);
     }
-  }
-
-  ionViewWillLeave() {
-    this.menuCtrl.enable(true);
   }
 
   // Gera as iniciais (ex: "Marina Costa" -> "MC")

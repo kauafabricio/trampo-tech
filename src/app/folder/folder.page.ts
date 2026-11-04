@@ -1,17 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   IonContent,
   IonIcon,
-  MenuController,
   ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
-  searchOutline,
   gitNetworkOutline,
   chatbubblesOutline,
   informationCircleOutline,
@@ -40,7 +37,6 @@ export interface MensagemTutor {
   styleUrls: ['./folder.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     IonContent,
     IonIcon
@@ -67,12 +63,10 @@ export class FolderPage {
 
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly menuCtrl = inject(MenuController);
   private readonly toastCtrl = inject(ToastController);
 
   constructor() {
     addIcons({
-      searchOutline,
       gitNetworkOutline,
       chatbubblesOutline,
       informationCircleOutline,
@@ -90,7 +84,6 @@ export class FolderPage {
   }
 
   async ionViewWillEnter(): Promise<void> {
-    this.menuCtrl.enable(false);
     try {
       await this.carregarDados();
     } catch {

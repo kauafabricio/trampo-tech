@@ -408,3 +408,179 @@ ion-content.trilha-bg {
   font-size: 12px;
   color: #625B53;
 }
+
+ion-content.trilha-bg {
+  --background: var(--trilha-bg-pagina);
+  color: var(--trilha-texto);
+}
+
+.top-bar,
+.stepper-bar {
+  background: var(--trilha-superficie);
+  border-color: var(--trilha-contorno-suave);
+}
+
+.top-bar {
+  min-height: 64px;
+  padding-inline: clamp(20px, 4vw, 48px);
+
+  .logo {
+    letter-spacing: -0.5px;
+  }
+
+  .env-pill {
+    border: 0;
+    background: var(--trilha-superficie-suave);
+  }
+}
+
+.stepper-bar {
+  .step-circle {
+    background: var(--trilha-superficie-suave);
+    color: var(--trilha-texto-secundario);
+  }
+
+  .step.completed .step-circle {
+    background: #E6F2EC;
+    color: var(--trilha-sucesso);
+  }
+
+  .step.active .step-circle {
+    background: var(--trilha-acao-aa);
+  }
+}
+
+.main-container {
+  max-width: 1000px;
+  padding: clamp(32px, 4vw, 48px) 24px;
+}
+
+.section-header {
+  .eyebrow {
+    margin-bottom: 6px;
+  }
+
+  .page-title {
+    font-size: clamp(1.75rem, 3vw, 2rem);
+    line-height: 1.2;
+  }
+}
+
+.cards-grid {
+  gap: 18px;
+}
+
+.trail-card {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--trilha-texto);
+  border-color: var(--trilha-contorno);
+  border-radius: var(--trilha-raio-card);
+  padding: 24px 22px;
+  box-shadow: none;
+
+  &:hover {
+    border-color: var(--trilha-acao-aa);
+    box-shadow: var(--trilha-sombra-sutil);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--trilha-marca-500);
+    outline-offset: 3px;
+  }
+
+  &.selected {
+    border: 2px solid var(--trilha-acao-aa);
+    padding: 23px 21px;
+    box-shadow: none;
+  }
+
+  .card-top {
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 1.25rem;
+    line-height: 1.35;
+  }
+
+  .card-desc {
+    min-height: 44px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  .modules-info {
+    margin-bottom: 16px;
+  }
+}
+
+.info-banner {
+  background: var(--trilha-destaque-suave);
+  border-radius: var(--trilha-raio-card);
+  padding: 16px 18px;
+}
+
+.actions-row {
+  .btn-back,
+  .btn-continue {
+    height: 48px;
+    border-radius: var(--trilha-raio-controle);
+  }
+
+  .btn-back {
+    border-color: transparent;
+  }
+
+  .btn-continue {
+    background: var(--trilha-acao-aa);
+
+    &:disabled {
+      background: #EAE5DF;
+      color: var(--trilha-texto-secundario);
+    }
+  }
+}
+
+.bottom-bar {
+  padding: 18px clamp(20px, 4vw, 48px);
+}
+
+@media (max-width: 560px) {
+  .main-container {
+    padding: 28px 18px;
+  }
+
+  .cards-grid {
+    gap: 14px;
+  }
+
+  .trail-card {
+    padding: 20px 18px;
+
+    &.selected {
+      padding: 19px 17px;
+    }
+
+    .card-desc {
+      min-height: 0;
+    }
+  }
+
+  .actions-row {
+    gap: 12px;
+
+    .btn-back,
+    .btn-continue {
+      height: 48px;
+      padding-inline: 14px;
+      font-size: 0.8rem;
+    }
+  }
+
+  .bottom-bar {
+    padding: 16px 20px;
+  }
+}

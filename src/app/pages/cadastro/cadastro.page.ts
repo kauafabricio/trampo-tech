@@ -1,5 +1,4 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,7 +6,6 @@ import {
   IonCheckbox,
   IonContent,
   IonIcon,
-  MenuController,
   ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
@@ -25,7 +23,6 @@ import { AuthService } from '../../services/auth';
   styleUrls: ['./cadastro.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     IonContent,
     IonIcon,
@@ -39,7 +36,6 @@ export class CadastroPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly menuCtrl = inject(MenuController);
   private readonly toastCtrl = inject(ToastController);
 
   constructor() {
@@ -57,14 +53,6 @@ export class CadastroPage implements OnInit {
       ]],
       termos: [false, [Validators.requiredTrue]]
     });
-  }
-
-  ionViewWillEnter(): void {
-    this.menuCtrl.enable(false);
-  }
-
-  ionViewWillLeave(): void {
-    this.menuCtrl.enable(true);
   }
 
   get primeiroNome(): string {

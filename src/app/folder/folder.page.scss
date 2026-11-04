@@ -47,17 +47,6 @@ ion-content.trilha-bg {
     gap: 16px;
   }
 
-  .search-btn {
-    background: transparent;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #625B53;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
   .env-pill {
     display: flex;
     align-items: center;
@@ -560,33 +549,6 @@ ion-content.trilha-bg {
   }
 }
 
-.context-highlight-box {
-  background: #FFF0E5;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-
-  h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0 0 8px 0;
-    color: #292621;
-  }
-
-  p {
-    font-size: 14px;
-    line-height: 21px;
-    color: #625B53;
-    margin: 0 0 12px 0;
-  }
-
-  .examples-text {
-    display: block;
-    font-size: 12px;
-    color: #A84300;
-  }
-}
-
 .other-concepts-block {
   margin-bottom: 16px;
 
@@ -855,40 +817,6 @@ ion-content.trilha-bg {
   }
 }
 
-.sequence-card {
-  h3 {
-    font-size: 14px;
-    font-weight: 700;
-    margin: 0 0 14px 0;
-  }
-
-  .sequence-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    li {
-      font-size: 13px;
-      color: #625B53;
-      display: flex;
-      gap: 10px;
-
-      span {
-        color: #A84300;
-        font-weight: 700;
-      }
-
-      &.active {
-        color: #292621;
-        font-weight: 700;
-      }
-    }
-  }
-}
-
 /* Estilos para a aba de CRUD ("Editar perfil") */
 .crud-list {
   display: flex;
@@ -951,4 +879,402 @@ ion-content.trilha-bg {
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
+}
+
+ion-content.trilha-bg {
+  --background: var(--trilha-bg-pagina);
+  color: var(--trilha-texto);
+}
+
+.app-shell {
+  min-height: 100%;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--trilha-superficie);
+  border-color: var(--trilha-contorno-suave);
+  padding-inline: clamp(18px, 3vw, 32px);
+
+  .top-bar-right {
+    gap: 12px;
+  }
+
+  .env-pill {
+    border: 0;
+    background: var(--trilha-superficie-suave);
+  }
+
+  .avatar-circle {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: transparent;
+    color: var(--trilha-texto-secundario);
+    font: inherit;
+    border-radius: var(--trilha-raio-controle);
+    padding: 8px;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+.sidebar {
+  width: 196px;
+  padding: 20px 12px;
+  border-color: var(--trilha-contorno-suave);
+
+  .nav-section-title,
+  .sidebar-trail-summary .summary-label {
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-item {
+    height: 42px;
+    border-radius: var(--trilha-raio-controle);
+
+    &.active {
+      background: var(--trilha-destaque-suave);
+      color: var(--trilha-acao-aa);
+    }
+  }
+}
+
+.content-area {
+  width: min(100%, 1240px);
+  padding: clamp(22px, 3vw, 32px);
+}
+
+.page-header-row {
+  align-items: center;
+  margin-bottom: 20px;
+
+  .page-title {
+    font-size: clamp(1.6rem, 2.4vw, 1.9rem);
+    line-height: 1.2;
+  }
+
+  .page-subtitle {
+    max-width: 720px;
+    line-height: 1.5;
+  }
+}
+
+.btn-tutor-outline,
+.btn-start-study {
+  min-height: 44px;
+  border-radius: var(--trilha-raio-controle);
+}
+
+.btn-tutor-outline {
+  color: var(--trilha-acao-aa);
+  border-color: var(--trilha-acao-aa);
+}
+
+.progress-card,
+.graph-card,
+.tutor-chat-card,
+.side-card,
+.crud-item,
+.evaluation-empty-card {
+  border: 1px solid var(--trilha-contorno-suave);
+  border-radius: var(--trilha-raio-card);
+  box-shadow: none;
+}
+
+.progress-card {
+  padding: 16px 20px;
+  gap: 24px;
+}
+
+.graph-workspace-grid,
+.tutor-workspace-grid {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+}
+
+.graph-card,
+.tutor-chat-card {
+  padding: 20px;
+}
+
+.module-node.unlocked {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--trilha-destaque-suave);
+  border-color: var(--trilha-acao-aa);
+
+  &:hover {
+    box-shadow: var(--trilha-sombra-sutil);
+  }
+}
+
+.center-hub {
+  background: var(--trilha-marca-500);
+  box-shadow: none;
+}
+
+.side-card {
+  padding: 20px;
+
+  .badge-initial {
+    background: var(--trilha-destaque-suave);
+    color: var(--trilha-acao-aa);
+  }
+}
+
+.side-alert {
+  background: var(--trilha-destaque-suave);
+  border-radius: var(--trilha-raio-card);
+}
+
+.btn-start-study,
+.chat-input-wrapper .btn-send {
+  background: var(--trilha-acao-aa);
+}
+
+.tutor-chat-header {
+  align-items: center;
+  gap: 12px;
+}
+
+.messages-list .message-row .msg-bubble {
+  border-radius: var(--trilha-raio-controle);
+}
+
+.messages-list .message-row.user-msg .msg-bubble {
+  background: var(--trilha-destaque-suave);
+  border-color: transparent;
+}
+
+.concept-chip {
+  border: 1px solid transparent !important;
+
+  &:hover {
+    border-color: var(--trilha-contorno-suave) !important;
+  }
+
+  &.selected {
+    background: var(--trilha-destaque-suave);
+    color: var(--trilha-acao-aa);
+  }
+}
+
+.evaluation-empty-card {
+  max-width: 640px;
+  padding: 24px;
+  background: var(--trilha-superficie);
+
+  .badge-initial {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: var(--trilha-texto-secundario);
+    background: var(--trilha-superficie-suave);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  h2 {
+    margin: 18px 0 8px;
+    font-size: 20px;
+  }
+
+  p {
+    max-width: 520px;
+    margin: 0 0 20px;
+    color: var(--trilha-texto-secundario);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .btn-start-study {
+    width: auto;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .content-area {
+    width: 100%;
+  }
+
+  .graph-workspace-grid,
+  .tutor-workspace-grid {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace {
+    display: block;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--trilha-contorno-suave);
+
+    .nav-section-title,
+    .sidebar-divider,
+    .sidebar-trail-summary {
+      display: none;
+    }
+
+    .nav-list {
+      flex-direction: row;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .nav-item {
+      width: auto;
+      min-width: max-content;
+      padding-inline: 12px;
+    }
+  }
+
+  .graph-workspace-grid,
+  .tutor-workspace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .right-column {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    align-items: start;
+  }
+
+}
+
+@media (max-width: 560px) {
+  .top-bar {
+    height: auto;
+    min-height: 60px;
+    padding: 10px 16px;
+    gap: 12px;
+
+    .top-bar-left {
+      gap: 8px;
+    }
+
+    .tagline {
+      font-size: 11px;
+    }
+
+    .top-bar-right {
+      gap: 8px;
+    }
+
+    .env-pill {
+      display: none;
+    }
+
+    .logout-btn span {
+      display: none;
+    }
+  }
+
+  .content-area {
+    padding: 22px 16px;
+  }
+
+  .page-header-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .progress-card {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+
+    .progress-bars-wrapper {
+      min-width: 100%;
+    }
+  }
+
+  .graph-card,
+  .tutor-chat-card {
+    padding: 16px;
+  }
+
+  .knowledge-graph {
+    .graph-lines {
+      display: none;
+    }
+
+    .graph-row {
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+
+      &.middle-row,
+      &.bottom-row {
+        justify-content: center;
+      }
+    }
+  }
+
+  .module-node {
+    width: min(100%, 240px);
+  }
+
+  .center-hub {
+    order: -1;
+    padding: 12px 18px;
+  }
+
+  .graph-legend .legend-pills {
+    gap: 6px;
+  }
+
+  .tutor-chat-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .messages-list .message-row .msg-caption {
+    padding-left: 0;
+  }
+
+  .concepts-chips {
+    gap: 6px;
+  }
+
+  .concept-chip {
+    max-width: 100%;
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+
+  .crud-inputs {
+    width: 100%;
+
+    input,
+    select {
+      width: 100%;
+    }
+  }
+
+  .evaluation-empty-card {
+    padding: 20px;
+  }
 }

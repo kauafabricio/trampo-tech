@@ -16,7 +16,6 @@ describe('FolderPage', () => {
 
     fixture = TestBed.createComponent(FolderPage);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('folder', 'Inbox');
     fixture.detectChanges();
   });
 

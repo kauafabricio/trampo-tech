@@ -10,11 +10,6 @@
       </div>
 
       <div class="top-bar-right">
-        <button class="search-btn">
-          <ion-icon name="search-outline"></ion-icon>
-          <span>Buscar conceitos</span>
-        </button>
-
         <div class="env-pill">
           <span class="env-dot"></span>
           <span>Ambiente de exemplo</span>
@@ -56,7 +51,7 @@
         <span class="eyebrow">SUA TRILHA</span>
         <h1 class="page-title">Escolha como quer começar.</h1>
         <p class="page-subtitle">
-          As duas opções começam pelo essencial. Você decide qual abordagem faz mais sentido.
+          Duas opções com o mesmo início. Escolha a abordagem que combina com o seu diagnóstico.
         </p>
       </div>
 
@@ -64,9 +59,11 @@
       <div class="cards-grid">
         
         <!-- Card 1: Da ideia à execução -->
-        <div 
+        <button
+          type="button"
           class="trail-card" 
           [class.selected]="trilhaSelecionada === 'execucao'"
+          [attr.aria-pressed]="trilhaSelecionada === 'execucao'"
           (click)="selecionarTrilha('execucao')">
           
           <div class="card-top">
@@ -79,7 +76,7 @@
 
           <h2 class="card-title">Da ideia à execução</h2>
           <p class="card-desc">
-            Exemplos e foco nas lacunas do diagnóstico: validação de hipóteses e priorização.
+            Foco em validar hipóteses e priorizar o que importa.
           </p>
 
           <hr class="card-divider" />
@@ -94,12 +91,14 @@
           <p class="first-step">
             Primeiro passo: testar a hipótese certa.
           </p>
-        </div>
+        </button>
 
         <!-- Card 2: Comece pelos fundamentos -->
-        <div 
+        <button
+          type="button"
           class="trail-card" 
           [class.selected]="trilhaSelecionada === 'fundamentos'"
+          [attr.aria-pressed]="trilhaSelecionada === 'fundamentos'"
           (click)="selecionarTrilha('fundamentos')">
           
           <div class="card-top">
@@ -112,7 +111,7 @@
 
           <h2 class="card-title">Comece pelos fundamentos</h2>
           <p class="card-desc">
-            Uma introdução ampla, com exemplos essenciais para quem está começando em gestão.
+            Uma introdução ampla para quem quer entender o essencial.
           </p>
 
           <hr class="card-divider" />
@@ -127,7 +126,7 @@
           <p class="first-step">
             Primeiro passo: entender como descobrir valor.
           </p>
-        </div>
+        </button>
 
       </div>
 

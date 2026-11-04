@@ -7,9 +7,11 @@
         <span class="logo">trilha</span>
         <span class="divider">|</span>
         <span class="tagline">Conhecimento que vira ação.</span>
+      </div>
+      <div class="top-bar-right">
         <span class="login-prompt">
-          {{ modoLogin ? 'Ainda não tem conta?' : 'Já tem uma conta?' }}
-          <a (click)="alternarModo()">{{ modoLogin ? 'Criar conta' : 'Entrar' }}</a>
+          {{ modoLogin ? 'Ainda não tem conta?' : 'Já tem conta?' }}
+          <button type="button" (click)="alternarModo()">{{ modoLogin ? 'Criar conta' : 'Entrar' }}</button>
         </span>
       </div>
     </header>
@@ -41,11 +43,11 @@
         </div>
 
         <h1 class="hero-title">
-          O próximo passo da sua startup começa aqui.
+          Crie sua conta e comece a aprender.
         </h1>
 
         <p class="hero-subtitle">
-          Descubra o que estudar primeiro e aplique gestão de projetos com um tutor IA ao seu lado.
+          Receba um diagnóstico, uma trilha guiada e apoio da IA.
         </p>
 
         <!-- Mindmap Diagram -->
@@ -88,60 +90,64 @@
         <form [formGroup]="form" (ngSubmit)="submeter()">
           
           <!-- Campo Nome (esconde se estiver no modo Login) -->
-          <div class="form-group" *ngIf="!modoLogin">
-            <label>Nome completo</label>
-            <div class="input-box" [class.valid]="form.get('nome')?.valid">
-              <input type="text" formControlName="nome" placeholder="Digite seu nome completo" />
-              <ion-icon 
-                *ngIf="form.get('nome')?.valid" 
-                name="checkmark-circle-outline" 
-                class="valid-icon">
-              </ion-icon>
+          @if (!modoLogin) {
+            <div class="form-group">
+              <label for="nome">Nome completo</label>
+              <div class="input-box" [class.valid]="form.get('nome')?.valid">
+                <input id="nome" type="text" formControlName="nome" placeholder="Digite seu nome completo" autocomplete="name" />
+                @if (form.get('nome')?.valid) {
+                  <ion-icon name="checkmark-circle-outline" class="valid-icon"></ion-icon>
+                }
+              </div>
+              @if (form.get('nome')?.valid) {
+                <div class="validation-msg">
+                  <ion-icon name="checkmark-outline"></ion-icon> Nome preenchido.
+                </div>
+              }
             </div>
-            <div class="validation-msg" *ngIf="form.get('nome')?.valid">
-              <ion-icon name="checkmark-outline"></ion-icon> Nome preenchido.
-            </div>
-          </div>
+          }
 
           <!-- Campo E-mail -->
           <div class="form-group">
-            <label>E-mail</label>
+            <label for="email">E-mail</label>
             <div class="input-box" [class.valid]="form.get('email')?.valid">
-              <input type="email" formControlName="email" placeholder="seu@email.com" />
-              <ion-icon 
-                *ngIf="form.get('email')?.valid" 
-                name="checkmark-circle-outline" 
-                class="valid-icon">
-              </ion-icon>
+              <input id="email" type="email" formControlName="email" placeholder="seu@email.com" autocomplete="email" />
+              @if (form.get('email')?.valid) {
+                <ion-icon name="checkmark-circle-outline" class="valid-icon"></ion-icon>
+              }
             </div>
-            <div class="validation-msg" *ngIf="form.get('email')?.valid">
-              <ion-icon name="checkmark-outline"></ion-icon> Formato de e-mail válido.
-            </div>
+            @if (form.get('email')?.valid) {
+              <div class="validation-msg">
+                <ion-icon name="checkmark-outline"></ion-icon> Formato de e-mail válido.
+              </div>
+            }
           </div>
 
           <!-- Campo Senha -->
           <div class="form-group">
-            <label>Senha</label>
+            <label for="senha">Senha</label>
             <div class="input-box" [class.valid]="form.get('senha')?.valid">
-              <input type="password" formControlName="senha" placeholder="••••••••••••" />
-              <ion-icon 
-                *ngIf="form.get('senha')?.valid" 
-                name="checkmark-circle-outline" 
-                class="valid-icon">
-              </ion-icon>
+              <input id="senha" type="password" formControlName="senha" placeholder="••••••••••••" [attr.autocomplete]="modoLogin ? 'current-password' : 'new-password'" />
+              @if (form.get('senha')?.valid) {
+                <ion-icon name="checkmark-circle-outline" class="valid-icon"></ion-icon>
+              }
             </div>
-            <div class="validation-msg" *ngIf="form.get('senha')?.valid">
-              <ion-icon name="checkmark-outline"></ion-icon> 8 ou mais caracteres • letras e números
-            </div>
+            @if (form.get('senha')?.valid) {
+              <div class="validation-msg">
+                <ion-icon name="checkmark-outline"></ion-icon> 8 ou mais caracteres • letras e números
+              </div>
+            }
           </div>
 
           <!-- Checkbox Termos -->
-          <div class="checkbox-group" *ngIf="!modoLogin">
-            <ion-checkbox formControlName="termos" mode="md"></ion-checkbox>
-            <span>
-              Quero criar minha conta e usar minhas respostas para receber um diagnóstico e uma sugestão de estudos.
-            </span>
-          </div>
+          @if (!modoLogin) {
+            <div class="checkbox-group">
+              <ion-checkbox formControlName="termos" mode="md"></ion-checkbox>
+              <span>
+                Quero criar minha conta e usar minhas respostas para receber um diagnóstico e uma sugestão de estudos.
+              </span>
+            </div>
+          }
 
           <!-- Botão Principal -->
           <button type="submit" class="btn-submit">

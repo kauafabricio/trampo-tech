@@ -10,21 +10,16 @@
       </div>
 
       <div class="top-bar-right">
-        <button type="button" class="search-btn">
-          <ion-icon name="search-outline"></ion-icon>
-          <span>Buscar conceitos</span>
-        </button>
-
         <div class="env-pill">
           <span class="env-dot"></span>
           <span>Conta autenticada</span>
         </div>
 
-        <div class="avatar-circle" (click)="selecionarAba('perfil')" title="Ver / Editar Perfil">
+        <button type="button" class="avatar-circle" (click)="selecionarAba('perfil')" aria-label="Ver ou editar perfil">
           {{ iniciaisUsuario }}
-        </div>
+        </button>
 
-        <button type="button" class="search-btn" (click)="sair()">
+        <button type="button" class="logout-btn" (click)="sair()">
           <ion-icon name="log-out-outline"></ion-icon>
           <span>Sair</span>
         </button>
@@ -88,14 +83,15 @@
       <!-- ========================================================= -->
       <!-- ABA 1: VISÃO GERAL (GRAFO DE CONHECIMENTO)                -->
       <!-- ========================================================= -->
-      <main class="content-area" *ngIf="abaAtiva === 'visao-geral'">
+      @if (abaAtiva === 'visao-geral') {
+      <main class="content-area">
         
         <div class="page-header-row">
           <div>
             <span class="eyebrow">TRILHA RECOMENDADA</span>
-            <h1 class="page-title">Seu grafo de conhecimento</h1>
+            <h1 class="page-title">Seu grafo inicial</h1>
             <p class="page-subtitle">
-              Comece pelo módulo inicial e avance com evidências do que você aprendeu.
+              A trilha começa com Estratégia e discovery. Os próximos módulos ficam disponíveis após aprovação da avaliação.
             </p>
           </div>
 
@@ -112,7 +108,7 @@
 
           <div class="progress-bars-wrapper">
             <div class="progress-bars-header">
-              <strong>Aprendizagem comprovada</strong>
+              <strong>Progresso da trilha</strong>
               <span>0 de 5</span>
             </div>
             <div class="segmented-bar">
@@ -142,7 +138,7 @@
               </svg>
 
               <div class="graph-row top-row">
-                <div class="module-node unlocked" (click)="selecionarAba('tutor')" style="cursor: pointer;">
+                <button type="button" class="module-node unlocked" (click)="selecionarAba('tutor')" aria-label="Estudar Estratégia e discovery">
                   <div class="node-status">
                     <ion-icon name="play-circle-outline"></ion-icon>
                     <span>Desbloqueado</span>
@@ -154,7 +150,7 @@
                     <li>Product-market fit</li>
                     <li>OKRs</li>
                   </ul>
-                </div>
+                </button>
               </div>
 
               <div class="graph-row middle-row">
@@ -250,9 +246,9 @@
               </span>
               <h2>Estratégia e discovery</h2>
               <p>
-                Transforme incertezas em hipóteses e experimentos de baixo custo.
+                Aprenda a validar hipóteses, construir um MVP, entender product-market fit e definir OKRs.
               </p>
-              <strong class="module-count">Módulo 1 de 5</strong>
+              <strong class="module-count">Módulo 1 de 5 • 4 conceitos</strong>
 
               <button type="button" class="btn-start-study" (click)="iniciarEstudo()">
                 Iniciar estudo
@@ -269,32 +265,24 @@
               </div>
             </div>
 
-            <div class="side-card sequence-card">
-              <h3>Sua sequência</h3>
-              <ol class="sequence-list">
-                <li class="active"><span>01</span> Estratégia e discovery</li>
-                <li><span>02</span> Metodologias</li>
-                <li><span>03</span> Priorização e roadmap</li>
-                <li><span>04</span> Pessoas e cultura</li>
-                <li><span>05</span> Métricas e riscos</li>
-              </ol>
-            </div>
           </aside>
         </div>
       </main>
+      }
 
       <!-- ========================================================= -->
       <!-- ABA 2: TUTOR IA (QUAL É A DOR REAL DO SEU NEGÓCIO AGORA?) -->
       <!-- ========================================================= -->
-      <main class="content-area" *ngIf="abaAtiva === 'tutor'">
+      @if (abaAtiva === 'tutor') {
+      <main class="content-area">
         
         <!-- Cabeçalho da Página do Tutor IA -->
         <div class="page-header-row">
           <div>
             <span class="eyebrow">TUTOR IA • ESTUDO COM CONTEXTO</span>
-            <h1 class="page-title">Qual é a dor real do seu negócio agora?</h1>
+            <h1 class="page-title">Conte o contexto do seu negócio</h1>
             <p class="page-subtitle">
-              Conte o tipo de negócio, o estágio e o que está travando. O tutor usa o módulo atual como contexto.
+              Tipo de negócio, estágio e dor real. O tutor usa isso para destacar conceitos do módulo atual.
             </p>
           </div>
 
@@ -310,32 +298,25 @@
           <!-- Coluna Esquerda: Card Principal de Interação do Tutor -->
           <section class="tutor-chat-card">
             <div class="tutor-chat-header">
-              <strong>Contexto do módulo</strong>
+              <strong>Tutor IA</strong>
               <span>Módulo inicial • Estratégia e discovery</span>
             </div>
 
             <!-- Lista de Mensagens (Inicial + Histórico salvo no localStorage) -->
             <div class="messages-list">
-              <div class="message-row" *ngFor="let msg of mensagensTutor" [class.user-msg]="msg.autor === 'usuario'">
+              @for (msg of mensagensTutor; track $index) {
+              <div class="message-row" [class.user-msg]="msg.autor === 'usuario'">
                 <span class="msg-caption">{{ msg.titulo }}</span>
                 <div class="msg-bubble-wrapper">
-                  <div class="avatar-ia" *ngIf="msg.autor === 'ia'"></div>
+                  @if (msg.autor === 'ia') {
+                    <div class="avatar-ia"></div>
+                  }
                   <div class="msg-bubble">
                     {{ msg.texto }}
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Caixa Laranja Suave: "Conte o seu contexto" -->
-            <div class="context-highlight-box">
-              <h2>Conte o seu contexto</h2>
-              <p>
-                Tipo de negócio, estágio e dor real. O tutor usa isso para destacar conceitos do módulo atual.
-              </p>
-              <strong class="examples-text">
-                Exemplos: validar uma ideia, alinhar a equipe ou escolher um experimento.
-              </strong>
+              }
             </div>
 
             <!-- Outros Conceitos do Módulo (Chips selecionáveis) -->
@@ -347,8 +328,11 @@
                   class="concept-chip" 
                   [class.selected]="conceitoSelecionado === 'Criar uma hipótese'"
                   (click)="selecionarConceito('Criar uma hipótese')">
-                  <ion-icon name="compass-outline" *ngIf="conceitoSelecionado === 'Criar uma hipótese'"></ion-icon>
-                  <span class="chip-dot" *ngIf="conceitoSelecionado !== 'Criar uma hipótese'"></span>
+                  @if (conceitoSelecionado === 'Criar uma hipótese') {
+                    <ion-icon name="compass-outline"></ion-icon>
+                  } @else {
+                    <span class="chip-dot"></span>
+                  }
                   <span>Criar uma hipótese</span>
                 </button>
 
@@ -357,8 +341,11 @@
                   class="concept-chip" 
                   [class.selected]="conceitoSelecionado === 'Planejar um MVP'"
                   (click)="selecionarConceito('Planejar um MVP')">
-                  <ion-icon name="compass-outline" *ngIf="conceitoSelecionado === 'Planejar um MVP'"></ion-icon>
-                  <span class="chip-dot" *ngIf="conceitoSelecionado !== 'Planejar um MVP'"></span>
+                  @if (conceitoSelecionado === 'Planejar um MVP') {
+                    <ion-icon name="compass-outline"></ion-icon>
+                  } @else {
+                    <span class="chip-dot"></span>
+                  }
                   <span>Planejar um MVP</span>
                 </button>
 
@@ -367,8 +354,11 @@
                   class="concept-chip" 
                   [class.selected]="conceitoSelecionado === 'Entender RICE'"
                   (click)="selecionarConceito('Entender RICE')">
-                  <ion-icon name="compass-outline" *ngIf="conceitoSelecionado === 'Entender RICE'"></ion-icon>
-                  <span class="chip-dot" *ngIf="conceitoSelecionado !== 'Entender RICE'"></span>
+                  @if (conceitoSelecionado === 'Entender RICE') {
+                    <ion-icon name="compass-outline"></ion-icon>
+                  } @else {
+                    <span class="chip-dot"></span>
+                  }
                   <span>Entender RICE</span>
                 </button>
               </div>
@@ -380,8 +370,8 @@
                 type="text" 
                 [(ngModel)]="textoMensagem" 
                 (keyup.enter)="enviarMensagemTutor()"
-                placeholder="Conte o tipo de negócio, o estágio e a dor real..." />
-              <button type="button" class="btn-send" (click)="enviarMensagemTutor()" title="Enviar contexto">
+                placeholder="Escreva sua dúvida ou conte seu contexto..." />
+              <button type="button" class="btn-send" (click)="enviarMensagemTutor()" aria-label="Enviar mensagem">
                 <ion-icon name="arrow-up-outline"></ion-icon>
               </button>
             </div>
@@ -470,11 +460,40 @@
 
         </div>
       </main>
+      }
 
       <!-- ========================================================= -->
-      <!-- ABA 3 & 4: EDITAR PERFIL / AVALIAÇÕES                    -->
+      <!-- ABA 3: AVALIAÇÕES                                        -->
       <!-- ========================================================= -->
-      <main class="content-area" *ngIf="abaAtiva === 'perfil' || abaAtiva === 'avaliacoes'">
+      @if (abaAtiva === 'avaliacoes') {
+      <main class="content-area">
+        <div class="page-header-row">
+          <div>
+            <span class="eyebrow">AVALIAÇÕES</span>
+            <h1 class="page-title">Avalie o que aprendeu.</h1>
+            <p class="page-subtitle">
+              A avaliação do módulo fica disponível depois do estudo.
+            </p>
+          </div>
+        </div>
+
+        <section class="evaluation-empty-card">
+          <span class="badge-initial">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            Ainda não disponível
+          </span>
+          <h2>Comece pelo módulo Estratégia e discovery.</h2>
+          <p>
+            Estude e converse com o tutor. Seu progresso só muda quando você concluir a avaliação.
+          </p>
+          <button type="button" class="btn-start-study" (click)="iniciarEstudo()">Ir para o estudo</button>
+        </section>
+      </main>
+      }
+
+      <!-- ABA 4: EDITAR PERFIL                                     -->
+      @if (abaAtiva === 'perfil') {
+      <main class="content-area">
         <div class="page-header-row">
           <div>
             <span class="eyebrow">CONTA • MONGODB</span>
@@ -522,6 +541,7 @@
           }
         </div>
       </main>
+      }
 
     </div>
   </div>

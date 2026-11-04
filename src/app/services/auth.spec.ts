@@ -46,4 +46,26 @@ describe('AuthService', () => {
     expect(await registration).toEqual(user);
     expect(service.getUsuarioLogado()).toEqual(user);
   });
+
+  it('logs in with the API and sends cookies for the session', async () => {
+    const user: Usuario = {
+      id: 'user-id',
+      nome: 'Ana Silva',
+      email: 'ana@example.com',
+      termosAceitos: true,
+      dataCriacao: '2026-01-01T00:00:00.000Z',
+      trilhaEscolhida: 'execucao'
+    };
+
+    const login = service.login('ana@example.com', 'senha123');
+    const request = httpTesting.expectOne('http://localhost:3000/api/auth/login');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ email: 'ana@example.com', senha: 'senha123' });
+    expect(request.request.withCredentials).toBe(true);
+    request.flush({ user });
+
+    expect(await login).toEqual(user);
+    expect(service.getUsuarioLogado()).toEqual(user);
+  });
 });

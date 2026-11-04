@@ -67,6 +67,9 @@ describe('authentication API', () => {
     const registrationBody = await registration.json();
     assert.equal(registrationBody.user.email, 'ana@example.com');
     assert.equal('passwordHash' in registrationBody.user, false);
+    const storedUser = storedUsers.find(user => user._id.toString() === registrationBody.user.id);
+    assert.ok(storedUser.passwordHash);
+    assert.notEqual(storedUser.passwordHash, 'senha123');
     const setCookie = registration.headers.get('set-cookie');
     assert.match(setCookie, /HttpOnly/i);
     const cookie = setCookie.split(';', 1)[0];
@@ -101,6 +104,10 @@ describe('authentication API', () => {
       body: JSON.stringify({ email: 'ANA@example.com', senha: 'senha123' })
     });
     assert.equal(login.status, 200);
+    const loginBody = await login.json();
+    assert.equal(loginBody.user.id, registrationBody.user.id);
+    assert.equal('passwordHash' in loginBody.user, false);
+    assert.match(login.headers.get('set-cookie'), /HttpOnly/i);
   });
 
   it('rejects duplicate registrations and invalid credentials', async () => {
