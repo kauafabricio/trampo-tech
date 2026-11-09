@@ -12,6 +12,7 @@ import {
   validateProfile,
   validateRegistration
 } from './validation.js';
+import { createAiRouter } from './routes/ai.js';
 
 const SESSION_COOKIE = 'trampotech_session';
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -52,7 +53,7 @@ function sendError(res, status, message) {
   return res.status(status).json({ message });
 }
 
-export function createApp({ users, jwtSecret, clientOrigin, production = false }) {
+export function createApp({ users, jwtSecret, clientOrigin, geminiClient, production = false }) {
   if (!users || !jwtSecret || !clientOrigin) {
     throw new Error('Users collection, JWT secret, and client origin are required.');
   }
@@ -196,6 +197,13 @@ export function createApp({ users, jwtSecret, clientOrigin, production = false }
   });
 
   app.use('/api/auth', authRouter);
+
+  // Rotas de IA (montadas apenas se geminiClient estiver disponível)
+  if (geminiClient) {
+    const aiRouter = createAiRouter({ geminiClient, requireAuth });
+    app.use('/api/ai', aiRouter);
+  }
+
   app.use((_req, res) => sendError(res, 404, 'Rota não encontrada.'));
   app.use((error, _req, res, _next) => {
     if (error?.type === 'entity.parse.failed') {
