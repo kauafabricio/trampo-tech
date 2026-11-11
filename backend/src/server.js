@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 import { createApp } from './app.js';
 import { createGeminiClient } from './ai/gemini-client.js';
+import { runMigrations } from './db/migrator.js';
 
 const {
   AUTH_JWT_SECRET,
@@ -11,7 +12,7 @@ const {
   NODE_ENV,
   PORT = '3000',
   GEMINI_API_KEY,
-  GEMINI_MODEL = 'gemini-2.0-flash',
+  GEMINI_MODEL = 'gemini-flash-lite-latest',
   AI_TIMEOUT_MS = '20000',
   AI_MAX_RETRIES = '2'
 } = process.env;
@@ -22,25 +23,36 @@ if (!AUTH_JWT_SECRET || AUTH_JWT_SECRET.length < 32) {
 if (!CLIENT_ORIGIN || !MONGODB_URI || !MONGODB_DB_NAME) {
   throw new Error('CLIENT_ORIGIN, MONGODB_URI, and MONGODB_DB_NAME must be configured.');
 }
-if (!GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY must be configured.');
-}
 
 const client = new MongoClient(MONGODB_URI);
 await client.connect();
 
 const db = client.db(MONGODB_DB_NAME);
-await db.collection('users').createIndex({ email: 1 }, { unique: true });
 
-const geminiClient = createGeminiClient({
-  apiKey: GEMINI_API_KEY,
-  modelName: GEMINI_MODEL,
-  timeoutMs: Number(AI_TIMEOUT_MS),
-  maxRetries: Number(AI_MAX_RETRIES)
-});
+// Executa migrations automáticas para garantir coleções, índices e integridade
+try {
+  await runMigrations(db);
+} catch (migErr) {
+  console.warn('[Server] Aviso na execução de migrações automáticas:', migErr.message);
+}
+
+let geminiClient = null;
+if (GEMINI_API_KEY) {
+  geminiClient = createGeminiClient({
+    apiKey: GEMINI_API_KEY,
+    modelName: GEMINI_MODEL,
+    timeoutMs: Number(AI_TIMEOUT_MS),
+    maxRetries: Number(AI_MAX_RETRIES)
+  });
+} else {
+  console.warn('[Server] GEMINI_API_KEY não configurada. Endpoints de IA ficarão desativados até configuração.');
+}
 
 const app = createApp({
   users: db.collection('users'),
+  customTrails: db.collection('custom_trails'),
+  userProgress: db.collection('user_progress'),
+  diagnosticResults: db.collection('diagnostic_results'),
   jwtSecret: AUTH_JWT_SECRET,
   clientOrigin: CLIENT_ORIGIN,
   geminiClient,
@@ -49,7 +61,9 @@ const app = createApp({
 
 const server = app.listen(Number(PORT), () => {
   console.log(`TrampoTech API listening on port ${PORT}.`);
-  console.log(`Gemini model: ${GEMINI_MODEL}`);
+  if (geminiClient) {
+    console.log(`Gemini model: ${GEMINI_MODEL}`);
+  }
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {

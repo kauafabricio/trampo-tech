@@ -123,7 +123,7 @@ export class CadastroPage implements OnInit {
       });
 
       await this.mostrarToast('Conta criada com sucesso!', 'success');
-      await this.router.navigate(['/sua-trilha']);
+      await this.router.navigate(['/diagnostico-inicial']);
     } catch (error) {
       await this.mostrarToast(this.mensagemErro(error), 'danger');
     }

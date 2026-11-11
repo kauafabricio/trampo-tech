@@ -1,0 +1,137 @@
+<ion-content [fullscreen]="true" class="diag-bg">
+  <div class="page-wrapper">
+
+    <!-- Header Superior -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="logo">trilha</span>
+        <span class="divider">|</span>
+        <span class="tagline">Conhecimento que vira ação.</span>
+      </div>
+
+      <div class="top-bar-right">
+        <button class="search-btn">
+          <ion-icon name="search-outline"></ion-icon>
+          <span>Buscar conceitos</span>
+        </button>
+
+        <div class="env-pill">
+          <span class="env-dot"></span>
+          <span>Ambiente de aprendizagem</span>
+        </div>
+
+        <div class="avatar-circle" [title]="usuarioLogado?.nome || 'Usuário'">
+          {{ iniciaisUsuario }}
+        </div>
+      </div>
+    </header>
+
+    <!-- Stepper Bar -->
+    <div class="stepper-bar">
+      <div class="step completed">
+        <span class="step-circle">
+          <ion-icon name="checkmark-outline"></ion-icon>
+        </span>
+        <span class="step-label">Sua conta</span>
+      </div>
+
+      <div class="step active">
+        <span class="step-circle">2</span>
+        <span class="step-label">Diagnóstico</span>
+      </div>
+
+      <div class="step">
+        <span class="step-circle">3</span>
+        <span class="step-label">Sua trilha</span>
+      </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-container">
+      
+      <!-- Cabeçalho da Seção -->
+      <div class="section-header">
+        <span class="eyebrow">AVALIAÇÃO DIAGNÓSTICA</span>
+        <h1 class="page-title">Descubra seu perfil e gere sua trilha com IA.</h1>
+        <p class="page-subtitle">
+          Responda a 5 perguntas sobre cenários reais de startups e gestão de projetos de tecnologia.
+          Nossa inteligência artificial identificará suas lacunas e montará uma trilha sob medida.
+        </p>
+      </div>
+
+      <!-- Barra de Progresso do Diagnóstico -->
+      <div class="progress-container">
+        <div class="progress-info">
+          <span>Progresso do diagnóstico</span>
+          <strong>{{ totalRespondidas }} de {{ perguntas.length }} respondidas ({{ percentualConcluido }}%)</strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" [style.width.%]="percentualConcluido"></div>
+        </div>
+      </div>
+
+      <!-- Estado de Carregamento Inicial -->
+      <div *ngIf="carregandoPerguntas" class="loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando perguntas diagnósticas...</p>
+      </div>
+
+      <!-- Lista de Perguntas -->
+      <div *ngIf="!carregandoPerguntas" class="questions-list">
+        <div *ngFor="let q of perguntas; let i = index" class="question-card">
+          <div class="question-header">
+            <span class="question-number">Questão {{ i + 1 }}</span>
+            <span class="question-category">{{ q.categoria }}</span>
+          </div>
+
+          <h3 class="question-title">{{ q.enunciado }}</h3>
+
+          <div class="options-group">
+            <div 
+              *ngFor="let opt of q.opcoes; let optIdx = index"
+              class="option-card"
+              [class.selected]="respostas[q.id] === optIdx"
+              (click)="selecionarOpcao(q.id, optIdx)">
+              <div class="radio-indicator" [class.checked]="respostas[q.id] === optIdx"></div>
+              <span class="option-text">{{ opt.texto }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner de Processamento IA -->
+      <div *ngIf="gerandoTrilha" class="ai-generating-banner">
+        <ion-spinner name="lines" color="primary"></ion-spinner>
+        <div class="ai-text">
+          <strong>A Inteligência Artificial está gerando sua trilha personalizada...</strong>
+          <p>Mapeando suas respostas, identificando lacunas e estruturando os 5 módulos customizados.</p>
+        </div>
+      </div>
+
+      <!-- Barra de Ações -->
+      <div class="actions-row">
+        <button type="button" class="btn-skip" (click)="pularParaTrilhaPadrao()" [disabled]="gerandoTrilha">
+          <span>Pular para trilha padrão</span>
+        </button>
+
+        <button 
+          type="button" 
+          class="btn-submit" 
+          [disabled]="gerandoTrilha || totalRespondidas < perguntas.length"
+          (click)="submeterDiagnostico()">
+          <span *ngIf="!gerandoTrilha">Concluir e Gerar Trilha com IA</span>
+          <span *ngIf="gerandoTrilha">Gerando trilha...</span>
+          <ion-icon *ngIf="!gerandoTrilha" name="sparkles-outline"></ion-icon>
+        </button>
+      </div>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bottom-bar">
+      <span>trilha • Gestão de projetos para startups</span>
+      <span>Um passo de cada vez.</span>
+    </footer>
+
+  </div>
+</ion-content>

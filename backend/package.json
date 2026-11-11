@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate": "node src/db/run-migrations.js"
   },
   "engines": {
     "node": ">=20"
@@ -21,6 +22,7 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.19.0"
+    "mongodb": "^6.19.0",
+    "zod": "^4.6.7"
   }
 }

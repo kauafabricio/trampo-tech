@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const DEFAULT_TIMEOUT_MS = 20_000;
+const DEFAULT_TIMEOUT_MS = 45_000;
 const DEFAULT_MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_500;
 

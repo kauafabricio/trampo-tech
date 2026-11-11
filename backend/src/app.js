@@ -13,6 +13,14 @@ import {
   validateRegistration
 } from './validation.js';
 import { createAiRouter } from './routes/ai.js';
+import { createTrailsRouter } from './routes/trails.js';
+import { createDiagnosticRouter } from './routes/diagnostic.js';
+import { createUsersRepository } from './repositories/users-repository.js';
+import { createCustomTrailsRepository } from './repositories/custom-trails-repository.js';
+import { createUserProgressRepository } from './repositories/user-progress-repository.js';
+import { createDiagnosticResultsRepository } from './repositories/diagnostic-results-repository.js';
+import { AIService } from './services/ai-service.js';
+import { TrailService } from './services/trail-service.js';
 
 const SESSION_COOKIE = 'trampotech_session';
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,8 +40,10 @@ function publicUser(user) {
     nome: user.nome,
     email: user.email,
     termosAceitos: user.termosAceitos,
-    dataCriacao: user.dataCriacao.toISOString(),
-    trilhaEscolhida: user.trilhaEscolhida
+    dataCriacao: user.dataCriacao instanceof Date ? user.dataCriacao.toISOString() : user.dataCriacao,
+    trail_source: user.trail_source || 'default',
+    custom_trail_id: user.custom_trail_id ? user.custom_trail_id.toString() : null,
+    ...(user.trilhaEscolhida ? { trilhaEscolhida: user.trilhaEscolhida } : {})
   };
 }
 
@@ -53,10 +63,130 @@ function sendError(res, status, message) {
   return res.status(status).json({ message });
 }
 
-export function createApp({ users, jwtSecret, clientOrigin, geminiClient, production = false }) {
+export function createFallbackCollection() {
+  const docs = [];
+  return {
+    async findOne(query) {
+      return docs.find(d => {
+        for (const [k, v] of Object.entries(query)) {
+          const docVal = d[k];
+          if (v && typeof v.equals === 'function') {
+            if (!docVal || !v.equals(docVal)) return false;
+          } else if (docVal && typeof docVal.equals === 'function') {
+            if (!v || !docVal.equals(v)) return false;
+          } else if (docVal !== v) {
+            return false;
+          }
+        }
+        return true;
+      }) || null;
+    },
+    async insertOne(doc) {
+      const inserted = { ...doc, _id: doc._id || new ObjectId() };
+      docs.push(inserted);
+      return { insertedId: inserted._id };
+    },
+    async updateOne(query, update, options = {}) {
+      let doc = await this.findOne(query);
+      if (!doc && options.upsert) {
+        doc = { _id: new ObjectId(), ...query };
+        if (update.$setOnInsert) Object.assign(doc, update.$setOnInsert);
+        docs.push(doc);
+      }
+      if (doc) {
+        if (update.$set) {
+          for (const [k, v] of Object.entries(update.$set)) {
+            const parts = k.split('.');
+            if (parts.length === 2) {
+              if (!doc[parts[0]]) doc[parts[0]] = {};
+              doc[parts[0]][parts[1]] = v;
+            } else {
+              doc[k] = v;
+            }
+          }
+        }
+        if (update.$addToSet) {
+          for (const [k, v] of Object.entries(update.$addToSet)) {
+            if (!Array.isArray(doc[k])) doc[k] = [];
+            if (!doc[k].includes(v)) doc[k].push(v);
+          }
+        }
+        return { matchedCount: 1, modifiedCount: 1 };
+      }
+      return { matchedCount: 0, modifiedCount: 0 };
+    },
+    find(query = {}) {
+      let sortKey = null;
+      let sortDir = 1;
+      return {
+        sort(sortSpec = {}) {
+          const keys = Object.keys(sortSpec);
+          if (keys.length > 0) {
+            sortKey = keys[0];
+            sortDir = sortSpec[sortKey];
+          }
+          return this;
+        },
+        async toArray() {
+          const filtered = docs.filter(d => {
+            for (const [k, v] of Object.entries(query)) {
+              const docVal = d[k];
+              if (v && typeof v.equals === 'function') {
+                if (!docVal || !v.equals(docVal)) return false;
+              } else if (docVal && typeof docVal.equals === 'function') {
+                if (!v || !docVal.equals(v)) return false;
+              } else if (docVal !== v) {
+                return false;
+              }
+            }
+            return true;
+          });
+          if (sortKey) {
+            filtered.sort((a, b) => {
+              const valA = a[sortKey] instanceof Date ? a[sortKey].getTime() : a[sortKey];
+              const valB = b[sortKey] instanceof Date ? b[sortKey].getTime() : b[sortKey];
+              if (valA < valB) return -1 * sortDir;
+              if (valA > valB) return 1 * sortDir;
+              return 0;
+            });
+          }
+          return [...filtered];
+        }
+      };
+    }
+  };
+}
+
+export function createApp({
+  users,
+  customTrails,
+  userProgress,
+  diagnosticResults,
+  jwtSecret,
+  clientOrigin,
+  geminiClient,
+  trailService: injectedTrailService,
+  production = false
+}) {
   if (!users || !jwtSecret || !clientOrigin) {
     throw new Error('Users collection, JWT secret, and client origin are required.');
   }
+
+  // Inicializa serviços e repositórios
+  const usersRepo = createUsersRepository(users);
+  const customTrailsRepo = createCustomTrailsRepository(customTrails || createFallbackCollection());
+  const progressRepo = createUserProgressRepository(userProgress || createFallbackCollection());
+  const diagnosticResultsRepo = createDiagnosticResultsRepository(diagnosticResults || createFallbackCollection());
+
+  const aiService = geminiClient ? new AIService({ geminiClient }) : null;
+
+  const trailService = injectedTrailService || new TrailService({
+    usersRepo,
+    customTrailsRepo,
+    progressRepo,
+    diagnosticResultsRepo,
+    aiService
+  });
 
   const app = express();
   app.disable('x-powered-by');
@@ -118,13 +248,17 @@ export function createApp({ users, jwtSecret, clientOrigin, geminiClient, produc
 
     const { nome, email, senha, termosAceitos } = validation.value;
     const passwordHash = await bcrypt.hash(senha, 12);
+
+    // Regra: Todo novo usuário começa com a trilha padrão como ativa (trail_source = "default"),
+    // sem criar nenhum registro de trilha no banco.
     const user = {
       nome,
       email,
       passwordHash,
       termosAceitos,
       dataCriacao: new Date(),
-      trilhaEscolhida: 'execucao'
+      trail_source: 'default',
+      custom_trail_id: null
     };
 
     try {
@@ -172,7 +306,7 @@ export function createApp({ users, jwtSecret, clientOrigin, geminiClient, produc
       return sendError(res, 400, validation.error);
     }
 
-    const { nome, email, trilhaEscolhida } = validation.value;
+    const { nome, email, trail_source, custom_trail_id, trilhaEscolhida } = validation.value;
     const duplicate = await users.findOne({
       email: normalizeEmail(email),
       _id: { $ne: req.authUser._id }
@@ -181,10 +315,15 @@ export function createApp({ users, jwtSecret, clientOrigin, geminiClient, produc
       return sendError(res, 409, 'Já existe uma conta com este e-mail.');
     }
 
+    const setFields = { nome, email };
+    if (trail_source) setFields.trail_source = trail_source;
+    if (custom_trail_id !== undefined) setFields.custom_trail_id = custom_trail_id;
+    if (trilhaEscolhida) setFields.trilhaEscolhida = trilhaEscolhida;
+
     try {
       await users.updateOne(
         { _id: req.authUser._id },
-        { $set: { nome, email, trilhaEscolhida } }
+        { $set: setFields }
       );
     } catch (error) {
       if (error?.code === 11000) {
@@ -198,7 +337,15 @@ export function createApp({ users, jwtSecret, clientOrigin, geminiClient, produc
 
   app.use('/api/auth', authRouter);
 
-  // Rotas de IA (montadas apenas se geminiClient estiver disponível)
+  // Rotas de Trilhas, Comparação e Escolha
+  const trailsRouter = createTrailsRouter({ trailService, requireAuth });
+  app.use('/api/trails', trailsRouter);
+
+  // Rotas de Avaliação Diagnóstica
+  const diagnosticRouter = createDiagnosticRouter({ trailService, requireAuth });
+  app.use('/api/diagnostic', diagnosticRouter);
+
+  // Rotas de IA (infraestrutura/ping)
   if (geminiClient) {
     const aiRouter = createAiRouter({ geminiClient, requireAuth });
     app.use('/api/ai', aiRouter);

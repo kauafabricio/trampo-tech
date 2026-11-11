@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { ObjectId } from 'mongodb';
 import { createApp } from './app.js';
+import { defaultTrail } from './trails/default-trail.js';
 
 const storedUsers = [];
 const users = {
@@ -26,7 +27,8 @@ const users = {
   },
   async updateOne({ _id }, { $set }) {
     const user = storedUsers.find(existing => existing._id.equals(_id));
-    Object.assign(user, $set);
+    if (user) Object.assign(user, $set);
+    return { matchedCount: user ? 1 : 0 };
   }
 };
 
@@ -50,66 +52,142 @@ after(async () => {
   });
 });
 
-describe('authentication API', () => {
-  it('registers, authenticates, returns the session user, and logs out', async () => {
+describe('API de Autenticação e Fundação de Trilhas', () => {
+  let sessionCookie;
+  let userId;
+
+  it('registra usuário com trail_source = "default", autentica e retorna sessão', async () => {
     const registration = await fetch(`${origin}/api/auth/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        nome: 'Ana Silva',
-        email: 'ANA@example.com',
+        nome: 'Marina Startup',
+        email: 'MARINA@STARTUP.COM',
         senha: 'senha123',
         termosAceitos: true
       })
     });
 
     assert.equal(registration.status, 201);
-    const registrationBody = await registration.json();
-    assert.equal(registrationBody.user.email, 'ana@example.com');
-    assert.equal('passwordHash' in registrationBody.user, false);
+    const body = await registration.json();
+    assert.equal(body.user.email, 'marina@startup.com');
+    assert.equal(body.user.trail_source, 'default', 'Novo usuário deve ter trail_source = "default"');
+    assert.equal(body.user.custom_trail_id, null, 'Novo usuário não deve ter custom_trail_id');
+    assert.equal('passwordHash' in body.user, false);
+
+    userId = body.user.id;
     const setCookie = registration.headers.get('set-cookie');
     assert.match(setCookie, /HttpOnly/i);
-    const cookie = setCookie.split(';', 1)[0];
+    sessionCookie = setCookie.split(';', 1)[0];
 
     const session = await fetch(`${origin}/api/auth/me`, {
-      headers: { cookie }
+      headers: { cookie: sessionCookie }
     });
     assert.equal(session.status, 200);
-    assert.equal((await session.json()).user.id, registrationBody.user.id);
+    const sessionBody = await session.json();
+    assert.equal(sessionBody.user.id, userId);
+    assert.equal(sessionBody.user.trail_source, 'default');
+  });
 
-    const profileUpdate = await fetch(`${origin}/api/auth/me`, {
-      method: 'PATCH',
+  it('GET /api/trails/active retorna a trilha padrão vinda do código com 5 módulos', async () => {
+    const res = await fetch(`${origin}/api/trails/active`, {
+      headers: { cookie: sessionCookie }
+    });
+
+    assert.equal(res.status, 200);
+    const data = await res.json();
+
+    assert.equal(data.source, 'default');
+    assert.equal(data.custom_trail_id, null);
+    assert.equal(data.status, 'ativa');
+    assert.equal(data.trail.id, 'default-trail');
+    assert.equal(data.trail.modulos.length, 5);
+
+    // Progresso inicial retornado junto
+    assert.equal(data.progress.completed_topics_count, 0);
+    assert.equal(data.progress.current_module_id, 'default-m1');
+  });
+
+  it('POST /api/trails/progress/topic conclui um tópico na trilha ativa', async () => {
+    const res = await fetch(`${origin}/api/trails/progress/topic`, {
+      method: 'POST',
       headers: {
-        cookie,
+        cookie: sessionCookie,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ topicId: 'default-m1-t1' })
+    });
+
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.ok(data.completed_topics.includes('default-m1-t1'));
+
+    // Consulta progresso
+    const progressRes = await fetch(`${origin}/api/trails/progress`, {
+      headers: { cookie: sessionCookie }
+    });
+    const progress = await progressRes.json();
+    assert.equal(progress.completed_topics_count, 1);
+    assert.deepEqual(progress.completed_topics, ['default-m1-t1']);
+  });
+
+  it('POST /api/trails/progress/assessment avalia o módulo 1 e desbloqueia o módulo 2', async () => {
+    const m1 = defaultTrail.modulos[0];
+    const answers = {
+      [m1.avaliacao.perguntas[0].id]: m1.avaliacao.perguntas[0].respostaCorreta,
+      [m1.avaliacao.perguntas[1].id]: m1.avaliacao.perguntas[1].respostaCorreta,
+      [m1.avaliacao.perguntas[2].id]: m1.avaliacao.perguntas[2].respostaCorreta,
+      [m1.avaliacao.perguntas[3].id]: m1.avaliacao.perguntas[3].respostaCorreta,
+      [m1.avaliacao.perguntas[4].id]: m1.avaliacao.perguntas[4].respostaCorreta
+    };
+
+    const res = await fetch(`${origin}/api/trails/progress/assessment`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie,
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        nome: 'Ana Costa',
-        email: 'ana@example.com',
-        trilhaEscolhida: 'fundamentos'
+        moduleId: 'default-m1',
+        answers
+      })
+    });
+
+    assert.equal(res.status, 200);
+    const result = await res.json();
+    assert.equal(result.score, 100);
+    assert.equal(result.passed, true);
+    assert.equal(result.nextModuleId, 'default-m2');
+  });
+
+  it('atualiza perfil com PATCH /api/auth/me', async () => {
+    const profileUpdate = await fetch(`${origin}/api/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        cookie: sessionCookie,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        nome: 'Marina Gestora',
+        email: 'marina@startup.com'
       })
     });
     assert.equal(profileUpdate.status, 200);
-    assert.equal((await profileUpdate.json()).user.trilhaEscolhida, 'fundamentos');
-
-    const logout = await fetch(`${origin}/api/auth/logout`, { method: 'POST' });
-    assert.equal(logout.status, 200);
-
-    const login = await fetch(`${origin}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'ANA@example.com', senha: 'senha123' })
-    });
-    assert.equal(login.status, 200);
+    assert.equal((await profileUpdate.json()).user.nome, 'Marina Gestora');
   });
 
-  it('rejects duplicate registrations and invalid credentials', async () => {
+  it('faz logout com sucesso', async () => {
+    const logout = await fetch(`${origin}/api/auth/logout`, { method: 'POST' });
+    assert.equal(logout.status, 200);
+  });
+
+  it('rejeita duplicações e credenciais inválidas', async () => {
     const duplicate = await fetch(`${origin}/api/auth/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        nome: 'Ana Silva',
-        email: 'ana@example.com',
+        nome: 'Marina Startup',
+        email: 'marina@startup.com',
         senha: 'senha123',
         termosAceitos: true
       })
@@ -119,7 +197,7 @@ describe('authentication API', () => {
     const invalidLogin = await fetch(`${origin}/api/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'ana@example.com', senha: 'errada123' })
+      body: JSON.stringify({ email: 'marina@startup.com', senha: 'errada123' })
     });
     assert.equal(invalidLogin.status, 401);
   });

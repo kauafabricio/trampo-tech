@@ -37,6 +37,8 @@ export function validateLogin(body) {
 export function validateProfile(body) {
   const nome = typeof body?.nome === 'string' ? body.nome.trim() : '';
   const email = normalizeEmail(body?.email);
+  const trail_source = body?.trail_source;
+  const custom_trail_id = body?.custom_trail_id;
   const trilhaEscolhida = body?.trilhaEscolhida;
 
   if (nome.length < 3 || nome.length > 100) {
@@ -45,9 +47,17 @@ export function validateProfile(body) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return { error: 'Informe um e-mail válido.' };
   }
-  if (trilhaEscolhida !== 'execucao' && trilhaEscolhida !== 'fundamentos') {
+  if (trail_source && trail_source !== 'default' && trail_source !== 'custom') {
+    return { error: 'Selecione uma fonte de trilha válida ("default" ou "custom").' };
+  }
+  if (trilhaEscolhida && trilhaEscolhida !== 'execucao' && trilhaEscolhida !== 'fundamentos') {
     return { error: 'Selecione uma trilha válida.' };
   }
 
-  return { value: { nome, email, trilhaEscolhida } };
+  const value = { nome, email };
+  if (trail_source) value.trail_source = trail_source;
+  if (custom_trail_id !== undefined) value.custom_trail_id = custom_trail_id;
+  if (trilhaEscolhida) value.trilhaEscolhida = trilhaEscolhida;
+
+  return { value };
 }

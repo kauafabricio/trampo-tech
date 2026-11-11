@@ -9,7 +9,9 @@ export interface Usuario {
   email: string;
   termosAceitos: boolean;
   dataCriacao: string;
-  trilhaEscolhida: 'execucao' | 'fundamentos';
+  trail_source?: 'default' | 'custom';
+  custom_trail_id?: string | null;
+  trilhaEscolhida?: 'execucao' | 'fundamentos' | null;
 }
 
 interface UsuarioResponse {

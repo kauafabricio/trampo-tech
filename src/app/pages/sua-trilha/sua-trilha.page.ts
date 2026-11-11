@@ -2,39 +2,45 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { 
-  IonContent, 
-  IonIcon, 
-  MenuController, 
-  ToastController 
+import {
+  IonContent,
+  IonIcon,
+  MenuController,
+  ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { 
-  searchOutline, 
-  checkmarkOutline, 
-  compassOutline, 
-  ellipseOutline, 
-  checkmarkCircle,
-  informationCircleOutline,
+import {
   arrowBackOutline,
-  arrowForwardOutline
+  arrowForwardOutline,
+  checkmarkCircle,
+  checkmarkOutline,
+  compassOutline,
+  ellipseOutline,
+  informationCircleOutline,
+  searchOutline,
+  sparklesOutline
 } from 'ionicons/icons';
 import { AuthService, Usuario } from '../../services/auth';
-import { IonHeader, IonToolbar, IonTitle } from "@ionic/angular";
+import { TrailService } from '../../services/trail.service';
+import { ComparisonOptionsResponse, Trail } from '../../models/trail';
 
 @Component({
   selector: 'app-sua-trilha',
   templateUrl: './sua-trilha.page.html',
   styleUrls: ['./sua-trilha.page.scss'],
   standalone: true,
-  imports: [IonTitle, IonToolbar, IonHeader, CommonModule, IonContent, IonIcon]
+  imports: [CommonModule, IonContent, IonIcon]
 })
 export class SuaTrilhaPage {
-// ... o restante do arquivo continua igual!
   usuarioLogado: Usuario | null = null;
-  trilhaSelecionada: 'execucao' | 'fundamentos' | null = null;
+  trilhaSelecionada: 'custom' | 'default' = 'custom';
+  loading = true;
+  comparison: ComparisonOptionsResponse | null = null;
+  defaultTrail: Trail | null = null;
+  proposedTrail: any | null = null;
 
   private readonly authService = inject(AuthService);
+  private readonly trailService = inject(TrailService);
   private readonly router = inject(Router);
   private readonly menuCtrl = inject(MenuController);
   private readonly toastCtrl = inject(ToastController);
@@ -48,22 +54,35 @@ export class SuaTrilhaPage {
       checkmarkCircle,
       informationCircleOutline,
       arrowBackOutline,
-      arrowForwardOutline
+      arrowForwardOutline,
+      sparklesOutline
     });
   }
 
   async ionViewWillEnter(): Promise<void> {
     this.menuCtrl.enable(false);
+    this.loading = true;
     try {
       this.usuarioLogado = await this.authService.restaurarSessao();
       if (!this.usuarioLogado) {
         await this.router.navigate(['/cadastro']);
         return;
       }
-      this.trilhaSelecionada = this.usuarioLogado.trilhaEscolhida;
+
+      this.comparison = await this.trailService.getComparisonOptions();
+      this.defaultTrail = this.comparison.default_trail;
+      this.proposedTrail = this.comparison.proposed_trail;
+
+      // Se há trilha personalizada proposta pela IA, recomenda e seleciona 'custom'
+      if (this.proposedTrail) {
+        this.trilhaSelecionada = 'custom';
+      } else {
+        this.trilhaSelecionada = 'default';
+      }
     } catch {
-      await this.mostrarToast('Não foi possível carregar sua conta. Verifique a conexão com a API.', 'danger');
-      await this.router.navigate(['/cadastro']);
+      await this.mostrarToast('Não foi possível carregar as opções de trilha. Verifique a conexão com o servidor.', 'danger');
+    } finally {
+      this.loading = false;
     }
   }
 
@@ -71,7 +90,6 @@ export class SuaTrilhaPage {
     this.menuCtrl.enable(true);
   }
 
-  // Gera as iniciais (ex: "Marina Costa" -> "MC")
   get iniciaisUsuario(): string {
     const nome = this.usuarioLogado?.nome || 'Usuário';
     const partes = nome.trim().split(' ');
@@ -79,12 +97,19 @@ export class SuaTrilhaPage {
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
   }
 
-  selecionarTrilha(trilha: 'execucao' | 'fundamentos'): void {
+  selecionarTrilha(trilha: 'custom' | 'default'): void {
     this.trilhaSelecionada = trilha;
   }
 
+  getModulosFluxo(trail: any): string {
+    if (!trail || !Array.isArray(trail.modulos)) {
+      return 'Módulo 1 → Módulo 2 → Módulo 3 → Módulo 4 → Módulo 5';
+    }
+    return trail.modulos.map((m: any) => m.titulo).join(' → ');
+  }
+
   voltar(): void {
-    this.router.navigate(['/cadastro']);
+    this.router.navigate(['/diagnostico-inicial']);
   }
 
   async continuar(): Promise<void> {
@@ -96,19 +121,19 @@ export class SuaTrilhaPage {
     }
 
     try {
-      this.usuarioLogado = await this.authService.atualizarUsuario({
-        ...this.usuarioLogado,
-        trilhaEscolhida: this.trilhaSelecionada
-      });
-      await this.mostrarToast(
-        `Trilha "${this.trilhaSelecionada === 'execucao' ? 'Da ideia à execução' : 'Comece pelos fundamentos'}" salva.`,
-        'success'
-      );
+      const customTrailId = this.proposedTrail?.id || this.proposedTrail?.custom_trail_id || null;
+      await this.trailService.chooseTrail(this.trilhaSelecionada, customTrailId);
+
+      const nomeTrilha = this.trilhaSelecionada === 'custom'
+        ? (this.proposedTrail?.titulo || 'Trilha Personalizada por IA')
+        : (this.defaultTrail?.titulo || 'Trilha Padrão');
+
+      await this.mostrarToast(`Trilha "${nomeTrilha}" ativada com sucesso!`, 'success');
       await this.router.navigate(['/folder/inbox']);
     } catch (error) {
       const message = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
         ? error.error.message
-        : 'Não foi possível salvar sua trilha. Verifique a conexão com a API.';
+        : 'Não foi possível salvar sua escolha de trilha.';
       await this.mostrarToast(message, 'danger');
     }
   }
@@ -116,7 +141,7 @@ export class SuaTrilhaPage {
   private async mostrarToast(message: string, color: 'success' | 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
       message,
-      duration: 2500,
+      duration: 3000,
       color,
       position: 'top'
     });

@@ -17,10 +17,10 @@
 
         <div class="env-pill">
           <span class="env-dot"></span>
-          <span>Ambiente de exemplo</span>
+          <span>Ambiente de aprendizagem</span>
         </div>
 
-        <div class="avatar-circle" [title]="usuarioLogado?.nome || 'Marina Costa'">
+        <div class="avatar-circle" [title]="usuarioLogado?.nome || 'Usuário'">
           {{ iniciaisUsuario }}
         </div>
       </div>
@@ -56,76 +56,102 @@
         <span class="eyebrow">SUA TRILHA</span>
         <h1 class="page-title">Escolha como quer começar.</h1>
         <p class="page-subtitle">
-          As duas opções começam pelo essencial. Você decide qual abordagem faz mais sentido.
+          Compare as duas abordagens e decida qual formato faz mais sentido para o seu momento.
         </p>
       </div>
 
       <!-- Grid dos 2 Cards de Trilha -->
       <div class="cards-grid">
         
-        <!-- Card 1: Da ideia à execução -->
+        <!-- Card 1: Trilha Personalizada por IA -->
         <div 
+          *ngIf="proposedTrail"
           class="trail-card" 
-          [class.selected]="trilhaSelecionada === 'execucao'"
-          (click)="selecionarTrilha('execucao')">
+          [class.selected]="trilhaSelecionada === 'custom'"
+          (click)="selecionarTrilha('custom')">
           
           <div class="card-top">
             <span class="badge-recommended">
-              <ion-icon name="compass-outline"></ion-icon>
-              Recomendada para você
+              <ion-icon name="sparkles-outline"></ion-icon>
+              Recomendada pela IA
             </span>
-            <div class="radio-circle" [class.checked]="trilhaSelecionada === 'execucao'"></div>
+            <div class="radio-circle" [class.checked]="trilhaSelecionada === 'custom'"></div>
           </div>
 
-          <h2 class="card-title">Da ideia à execução</h2>
+          <h2 class="card-title">{{ proposedTrail.titulo }}</h2>
           <p class="card-desc">
-            Exemplos e foco nas lacunas do diagnóstico: validação de hipóteses e priorização.
+            {{ proposedTrail.descricao }}
           </p>
 
           <hr class="card-divider" />
 
           <div class="modules-info">
-            <strong>5 módulos • sequência guiada</strong>
+            <strong>5 módulos • sequência personalizada</strong>
             <p class="modules-flow">
-              Estratégia e discovery → Metodologias → Priorização e roadmap → Pessoas e cultura → Métricas e riscos
+              {{ getModulosFluxo(proposedTrail) }}
             </p>
           </div>
 
           <p class="first-step">
-            Primeiro passo: testar a hipótese certa.
+            Primeiro passo: {{ proposedTrail.modulos[0]?.titulo }}
           </p>
         </div>
 
-        <!-- Card 2: Comece pelos fundamentos -->
+        <!-- Card se o usuário ainda não tiver gerado diagnóstico -->
+        <div 
+          *ngIf="!proposedTrail"
+          class="trail-card"
+          (click)="voltar()">
+          
+          <div class="card-top">
+            <span class="badge-recommended">
+              <ion-icon name="sparkles-outline"></ion-icon>
+              Personalização disponível
+            </span>
+          </div>
+
+          <h2 class="card-title">Gerar trilha personalizada com IA</h2>
+          <p class="card-desc">
+            Você ainda não realizou o teste diagnóstico. Faça o teste rápido de 5 perguntas para que nossa IA gere uma trilha sob medida para suas lacunas!
+          </p>
+
+          <hr class="card-divider" />
+
+          <p class="first-step" style="color: #A84300; font-weight: 600; cursor: pointer;">
+            Clique aqui para iniciar o diagnóstico agora →
+          </p>
+        </div>
+
+        <!-- Card 2: Trilha Padrão do Código -->
         <div 
           class="trail-card" 
-          [class.selected]="trilhaSelecionada === 'fundamentos'"
-          (click)="selecionarTrilha('fundamentos')">
+          [class.selected]="trilhaSelecionada === 'default'"
+          (click)="selecionarTrilha('default')">
           
           <div class="card-top">
             <span class="badge-beginner">
               <span class="circle-icon"></span>
-              Padrão iniciante
+              Padrão equilibrada
             </span>
-            <div class="radio-circle" [class.checked]="trilhaSelecionada === 'fundamentos'"></div>
+            <div class="radio-circle" [class.checked]="trilhaSelecionada === 'default'"></div>
           </div>
 
-          <h2 class="card-title">Comece pelos fundamentos</h2>
+          <h2 class="card-title">{{ defaultTrail?.titulo || 'Gestão de Projetos em Startups' }}</h2>
           <p class="card-desc">
-            Uma introdução ampla, com exemplos essenciais para quem está começando em gestão.
+            {{ defaultTrail?.descricao || 'Uma introdução ampla e robusta, com exemplos essenciais para quem busca dominar gestão ágil do zero à governança.' }}
           </p>
 
           <hr class="card-divider" />
 
           <div class="modules-info">
-            <strong>5 módulos • sequência guiada</strong>
+            <strong>5 módulos • sequência estruturada</strong>
             <p class="modules-flow">
-              Estratégia e discovery → Metodologias → Priorização e roadmap → Pessoas e cultura → Métricas e riscos
+              {{ getModulosFluxo(defaultTrail) }}
             </p>
           </div>
 
           <p class="first-step">
-            Primeiro passo: entender como descobrir valor.
+            Primeiro passo: {{ defaultTrail?.modulos?.[0]?.titulo || 'Fundamentos de Startups e Metodologias Ágeis' }}
           </p>
         </div>
 
@@ -136,10 +162,10 @@
         <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
         <div class="info-text">
           <strong>
-            {{ trilhaSelecionada ? 'Trilha selecionada! Pronto para continuar.' : 'Selecione uma trilha para continuar.' }}
+            {{ trilhaSelecionada === 'custom' ? 'Trilha personalizada por IA selecionada!' : 'Trilha padrão selecionada!' }}
           </strong>
           <p>
-            O diagnóstico orienta o foco, mas não conclui módulos. Só o primeiro módulo estará disponível.
+            O diagnóstico orienta as recomendações, mas não conclui módulos automaticamente. Você iniciará a partir do primeiro módulo.
           </p>
         </div>
       </div>
@@ -148,13 +174,13 @@
       <div class="actions-row">
         <button type="button" class="btn-back" (click)="voltar()">
           <ion-icon name="arrow-back-outline"></ion-icon>
-          <span>Voltar ao resultado</span>
+          <span>Refazer diagnóstico</span>
         </button>
 
         <button 
           type="button" 
           class="btn-continue" 
-          [disabled]="!trilhaSelecionada"
+          [disabled]="loading || !trilhaSelecionada"
           (click)="continuar()">
           <span>Continuar</span>
           <ion-icon name="arrow-forward-outline"></ion-icon>
