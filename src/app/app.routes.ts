@@ -22,6 +22,11 @@ export const routes: Routes = [
       import('./pages/sua-trilha/sua-trilha.page').then((m) => m.SuaTrilhaPage),
   },
   {
+    path: 'tutor',
+    loadComponent: () =>
+      import('./pages/tutor/tutor.page').then((m) => m.TutorPage),
+  },
+  {
     path: 'folder/:id',
     loadComponent: () =>
       import('./folder/folder.page').then((m) => m.FolderPage),

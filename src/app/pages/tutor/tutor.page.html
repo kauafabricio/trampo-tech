@@ -1,0 +1,131 @@
+<ion-content [fullscreen]="true" class="tutor-bg">
+  <div class="page-wrapper">
+
+    <!-- Header Superior -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="logo">tutor</span>
+        <span class="divider">|</span>
+        <span class="tagline">Seu mentor de aprendizagem.</span>
+      </div>
+      <div class="top-bar-right">
+        <button class="trail-btn" (click)="navigateToTrail()">
+          <ion-icon name="arrow-forward-outline"></ion-icon>
+          <span>Minha Trilha</span>
+        </button>
+        <div class="avatar-circle" [title]="usuarioLogado?.nome || 'Usuário'">
+          {{ iniciaisUsuario }}
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Carregando chat...</p>
+    </div>
+
+    <!-- Chat principal -->
+    <main *ngIf="!loading" class="chat-main">
+
+      <!-- Área de mensagens -->
+      <div class="messages-wrapper" #messagesContainer>
+        <div class="messages-list">
+
+          <ng-container *ngFor="let msg of messages">
+            <!-- Mensagem do usuário -->
+            <div *ngIf="msg.role === 'user'" class="message-row user-row">
+              <div class="message-bubble user-bubble">
+                <p class="bubble-text" [innerHTML]="formatMessageContent(msg.content)"></p>
+              </div>
+              <div class="avatar-mini user-avatar">{{ iniciaisUsuario }}</div>
+            </div>
+
+            <!-- Mensagem do tutor -->
+            <div *ngIf="msg.role === 'assistant'" class="message-row assistant-row">
+              <div class="avatar-mini tutor-avatar">
+                <ion-icon name="sparkles-outline"></ion-icon>
+              </div>
+              <div class="message-bubble assistant-bubble">
+                <p *ngIf="msg.id === 'typing'" class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </p>
+                <p *ngIf="msg.id !== 'typing'" class="bubble-text"
+                   [innerHTML]="formatMessageContent(msg.content)"></p>
+              </div>
+            </div>
+          </ng-container>
+
+        </div>
+      </div>
+
+      <!-- Card de Proposta de Nova Trilha -->
+      <div *ngIf="pendingProposal" class="proposal-card">
+        <div class="proposal-header">
+          <ion-icon name="sparkles-outline" class="proposal-icon"></ion-icon>
+          <strong>Trilha Personalizada Sugerida pelo Tutor</strong>
+          <button class="dismiss-btn" (click)="dismissProposal()">✕</button>
+        </div>
+
+        <div class="proposal-body">
+          <h3 class="proposal-title">{{ pendingProposal.trail.titulo }}</h3>
+          <p class="proposal-desc">{{ pendingProposal.trail.descricao }}</p>
+          <div class="proposal-modules">
+            <strong>5 módulos:</strong>
+            <span *ngFor="let mod of pendingProposal.trail.modulos; let i = index">
+              {{ i + 1 }}. {{ mod.titulo }}
+            </span>
+          </div>
+        </div>
+
+        <div class="proposal-actions">
+          <button
+            class="btn-accept"
+            [disabled]="respondingToProposal"
+            (click)="acceptProposal()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            {{ respondingToProposal ? 'Aguarde...' : 'Aceitar nova trilha' }}
+          </button>
+          <button
+            class="btn-reject"
+            [disabled]="respondingToProposal"
+            (click)="rejectProposal()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Manter trilha atual
+          </button>
+        </div>
+      </div>
+
+      <!-- Input de mensagem -->
+      <div class="input-area">
+        <div class="input-row">
+          <textarea
+            class="message-input"
+            [(ngModel)]="newMessage"
+            (keydown)="onKeyDown($event)"
+            placeholder="Pergunte ao tutor sobre sua trilha, peça recomendações ou compartilhe suas dificuldades..."
+            rows="1"
+            [disabled]="sending"
+            maxlength="2000">
+          </textarea>
+          <button
+            class="send-btn"
+            [disabled]="!newMessage.trim() || sending"
+            (click)="sendMessage()">
+            <ion-icon *ngIf="!sending" name="send-outline"></ion-icon>
+            <div *ngIf="sending" class="send-spinner"></div>
+          </button>
+        </div>
+        <p class="input-hint">Enter para enviar • Shift+Enter para nova linha</p>
+      </div>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bottom-bar">
+      <span>tutor • Gestão de projetos para startups</span>
+      <span>Aprenda no seu ritmo.</span>
+    </footer>
+
+  </div>
+</ion-content>

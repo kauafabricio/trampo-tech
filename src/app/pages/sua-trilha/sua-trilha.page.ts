@@ -129,7 +129,7 @@ export class SuaTrilhaPage {
         : (this.defaultTrail?.titulo || 'Trilha Padrão');
 
       await this.mostrarToast(`Trilha "${nomeTrilha}" ativada com sucesso!`, 'success');
-      await this.router.navigate(['/folder/inbox']);
+      await this.router.navigate(['/tutor']);
     } catch (error) {
       const message = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
         ? error.error.message

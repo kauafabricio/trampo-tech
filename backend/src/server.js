@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { MongoClient } from 'mongodb';
-import { createApp } from './app.js';
+import { createApp, createFallbackCollection } from './app.js';
 import { createGeminiClient } from './ai/gemini-client.js';
 import { runMigrations } from './db/migrator.js';
 
@@ -24,16 +24,38 @@ if (!CLIENT_ORIGIN || !MONGODB_URI || !MONGODB_DB_NAME) {
   throw new Error('CLIENT_ORIGIN, MONGODB_URI, and MONGODB_DB_NAME must be configured.');
 }
 
-const client = new MongoClient(MONGODB_URI);
-await client.connect();
+let client = null;
+let collections = null;
 
-const db = client.db(MONGODB_DB_NAME);
-
-// Executa migrations automáticas para garantir coleções, índices e integridade
 try {
-  await runMigrations(db);
-} catch (migErr) {
-  console.warn('[Server] Aviso na execução de migrações automáticas:', migErr.message);
+  client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+  await client.connect();
+  const db = client.db(MONGODB_DB_NAME);
+
+  // Executa migrations automáticas para garantir coleções, índices e integridade
+  try {
+    await runMigrations(db);
+  } catch (migErr) {
+    console.warn('[Server] Aviso na execução de migrações automáticas:', migErr.message);
+  }
+
+  collections = {
+    users: db.collection('users'),
+    customTrails: db.collection('custom_trails'),
+    userProgress: db.collection('user_progress'),
+    diagnosticResults: db.collection('diagnostic_results'),
+    chatMessages: db.collection('tutor_messages')
+  };
+  console.log('[Server] Conectado ao MongoDB com sucesso.');
+} catch (dbErr) {
+  console.warn(`[Server] Não foi possível conectar ao MongoDB (${dbErr.message}). Utilizando coleções in-memory (resiliência ativa).`);
+  collections = {
+    users: createFallbackCollection(),
+    customTrails: createFallbackCollection(),
+    userProgress: createFallbackCollection(),
+    diagnosticResults: createFallbackCollection(),
+    chatMessages: createFallbackCollection()
+  };
 }
 
 let geminiClient = null;
@@ -49,10 +71,11 @@ if (GEMINI_API_KEY) {
 }
 
 const app = createApp({
-  users: db.collection('users'),
-  customTrails: db.collection('custom_trails'),
-  userProgress: db.collection('user_progress'),
-  diagnosticResults: db.collection('diagnostic_results'),
+  users: collections.users,
+  customTrails: collections.customTrails,
+  userProgress: collections.userProgress,
+  diagnosticResults: collections.diagnosticResults,
+  chatMessages: collections.chatMessages,
   jwtSecret: AUTH_JWT_SECRET,
   clientOrigin: CLIENT_ORIGIN,
   geminiClient,
@@ -69,7 +92,9 @@ const server = app.listen(Number(PORT), () => {
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     server.close(async () => {
-      await client.close();
+      if (client) {
+        await client.close();
+      }
       process.exit(0);
     });
   });

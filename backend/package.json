@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test",
+    "test": "node --test src/**/*.test.js",
+    "test:e2e-live": "node scripts/test-full-flow-live.js",
     "migrate": "node src/db/run-migrations.js"
   },
   "engines": {

@@ -15,12 +15,15 @@ import {
 import { createAiRouter } from './routes/ai.js';
 import { createTrailsRouter } from './routes/trails.js';
 import { createDiagnosticRouter } from './routes/diagnostic.js';
+import { createTutorRouter } from './routes/tutor.js';
 import { createUsersRepository } from './repositories/users-repository.js';
 import { createCustomTrailsRepository } from './repositories/custom-trails-repository.js';
 import { createUserProgressRepository } from './repositories/user-progress-repository.js';
 import { createDiagnosticResultsRepository } from './repositories/diagnostic-results-repository.js';
+import { createChatMessagesRepository } from './repositories/chat-messages-repository.js';
 import { AIService } from './services/ai-service.js';
 import { TrailService } from './services/trail-service.js';
+import { TutorService } from './services/tutor-service.js';
 
 const SESSION_COOKIE = 'trampotech_session';
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -118,6 +121,7 @@ export function createFallbackCollection() {
     find(query = {}) {
       let sortKey = null;
       let sortDir = 1;
+      let limitCount = null;
       return {
         sort(sortSpec = {}) {
           const keys = Object.keys(sortSpec);
@@ -125,6 +129,10 @@ export function createFallbackCollection() {
             sortKey = keys[0];
             sortDir = sortSpec[sortKey];
           }
+          return this;
+        },
+        limit(n) {
+          limitCount = n;
           return this;
         },
         async toArray() {
@@ -150,7 +158,8 @@ export function createFallbackCollection() {
               return 0;
             });
           }
-          return [...filtered];
+          const result = [...filtered];
+          return limitCount !== null ? result.slice(0, limitCount) : result;
         }
       };
     }
@@ -162,10 +171,12 @@ export function createApp({
   customTrails,
   userProgress,
   diagnosticResults,
+  chatMessages,
   jwtSecret,
   clientOrigin,
   geminiClient,
   trailService: injectedTrailService,
+  tutorService: injectedTutorService,
   production = false
 }) {
   if (!users || !jwtSecret || !clientOrigin) {
@@ -177,6 +188,7 @@ export function createApp({
   const customTrailsRepo = createCustomTrailsRepository(customTrails || createFallbackCollection());
   const progressRepo = createUserProgressRepository(userProgress || createFallbackCollection());
   const diagnosticResultsRepo = createDiagnosticResultsRepository(diagnosticResults || createFallbackCollection());
+  const chatMessagesRepo = createChatMessagesRepository(chatMessages || createFallbackCollection());
 
   const aiService = geminiClient ? new AIService({ geminiClient }) : null;
 
@@ -187,6 +199,14 @@ export function createApp({
     diagnosticResultsRepo,
     aiService
   });
+
+  const tutorService = injectedTutorService || (geminiClient ? new TutorService({
+    geminiClient,
+    chatMessagesRepo,
+    trailService,
+    customTrailsRepo,
+    usersRepo
+  }) : null);
 
   const app = express();
   app.disable('x-powered-by');
@@ -344,6 +364,12 @@ export function createApp({
   // Rotas de Avaliação Diagnóstica
   const diagnosticRouter = createDiagnosticRouter({ trailService, requireAuth });
   app.use('/api/diagnostic', diagnosticRouter);
+
+  // Rotas do Tutor IA (chat + detecção de dor + aceitação de proposta)
+  if (tutorService) {
+    const tutorRouter = createTutorRouter({ tutorService, requireAuth });
+    app.use('/api/tutor', tutorRouter);
+  }
 
   // Rotas de IA (infraestrutura/ping)
   if (geminiClient) {

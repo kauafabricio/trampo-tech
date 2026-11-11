@@ -1,8 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const DEFAULT_TIMEOUT_MS = 45_000;
-const DEFAULT_MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1_500;
+const DEFAULT_MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2_000;
 
 /**
  * Aguarda um tempo antes de tentar novamente (backoff simples).

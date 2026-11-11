@@ -207,7 +207,8 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON):
     // Tentativa 2 (Retry simples corretivo, como especificado na regra de negócio)
     console.warn(`[AIService] Tentativa 1 de geração falhou (${lastValidationError}). Executando retry corretivo com a IA...`);
 
-    const retryPrompt = `${basePrompt}
+    const retryPrompt = rawResponseText
+      ? `${basePrompt}
 
 ATENÇÃO: A tentativa anterior falhou com os seguintes erros de formato:
 ${lastValidationError}
@@ -217,7 +218,8 @@ Por favor, corrija rigorosamente. Lembre-se:
 - Cada módulo deve conter EXATAMENTE 5 tópicos.
 - Cada módulo deve conter EXATAMENTE 1 avaliação com EXATAMENTE 5 perguntas.
 - Cada pergunta deve ter EXATAMENTE 4 alternativas.
-Retorne exclusivamente o objeto JSON válido.`;
+Retorne exclusivamente o objeto JSON válido.`
+      : basePrompt;
 
     try {
       rawResponseText = await this.geminiClient.generate({
