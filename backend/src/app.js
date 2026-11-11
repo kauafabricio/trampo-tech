@@ -211,16 +211,47 @@ export function createApp({
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
+
+  const allowedOrigins = [
+    clientOrigin,
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
+    'http://localhost:8100',
+    'http://127.0.0.1:8100'
+  ].filter(Boolean);
+
   app.use(cors({
-    origin: clientOrigin,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        callback(null, true);
+      } else {
+        callback(null, origin === clientOrigin);
+      }
+    },
     credentials: true
   }));
   app.use(express.json({ limit: '10kb' }));
   app.use(cookieParser());
 
+  // Rota de HealthCheck público para verificação da saúde da API e banco
+  app.get('/api/health', async (_req, res) => {
+    let dbStatus = 'connected';
+    try {
+      await users.findOne({});
+    } catch {
+      dbStatus = 'degraded';
+    }
+    return res.json({
+      status: 'ok',
+      database: dbStatus,
+      ai_configured: Boolean(geminiClient),
+      timestamp: new Date().toISOString()
+    });
+  });
+
   const authRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 10,
+    limit: production ? 20 : 200,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { message: 'Muitas tentativas. Tente novamente em alguns minutos.' }
@@ -267,6 +298,12 @@ export function createApp({
     }
 
     const { nome, email, senha, termosAceitos } = validation.value;
+
+    const duplicate = await users.findOne({ email });
+    if (duplicate) {
+      return sendError(res, 409, 'Já existe uma conta com este e-mail.');
+    }
+
     const passwordHash = await bcrypt.hash(senha, 12);
 
     // Regra: Todo novo usuário começa com a trilha padrão como ativa (trail_source = "default"),

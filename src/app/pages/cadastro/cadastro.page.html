@@ -80,58 +80,103 @@
 
       <!-- Coluna Direita: Formulário -->
       <section class="form-section">
+        <div class="api-status-badge" *ngIf="apiStatus">
+          <span class="status-dot" [class.online]="apiStatus.online" [class.offline]="!apiStatus.online"></span>
+          <span *ngIf="apiStatus.online">API Conectada • {{ apiStatus.database }}</span>
+          <span *ngIf="!apiStatus.online" class="offline-text">Servidor Offline (localhost:3000)</span>
+        </div>
+
         <h2 class="form-title">{{ modoLogin ? 'Acesse sua conta' : 'Crie sua conta' }}</h2>
         <p class="form-subtitle">
           Vamos construir seu ponto de partida, {{ primeiroNome }}.
         </p>
+
+        <!-- Banner de Alerta Estruturado -->
+        <div *ngIf="mensagemAlerta" class="alert-banner" [class.danger]="tipoAlerta === 'danger'" [class.warning]="tipoAlerta === 'warning'" [class.success]="tipoAlerta === 'success'">
+          <ion-icon [name]="tipoAlerta === 'warning' ? 'alert-circle-outline' : 'close-circle-outline'" class="alert-icon"></ion-icon>
+          <div class="alert-content">
+            <span class="alert-text">{{ mensagemAlerta }}</span>
+          </div>
+          <button type="button" class="btn-close-alert" (click)="fecharAlerta()">✕</button>
+        </div>
 
         <form [formGroup]="form" (ngSubmit)="submeter()">
           
           <!-- Campo Nome (esconde se estiver no modo Login) -->
           <div class="form-group" *ngIf="!modoLogin">
             <label>Nome completo</label>
-            <div class="input-box" [class.valid]="form.get('nome')?.valid">
+            <div class="input-box" 
+                 [class.valid]="form.get('nome')?.valid && form.get('nome')?.touched"
+                 [class.invalid]="form.get('nome')?.invalid && form.get('nome')?.touched">
               <input type="text" formControlName="nome" placeholder="Digite seu nome completo" />
               <ion-icon 
-                *ngIf="form.get('nome')?.valid" 
+                *ngIf="form.get('nome')?.valid && form.get('nome')?.touched" 
                 name="checkmark-circle-outline" 
                 class="valid-icon">
               </ion-icon>
+              <ion-icon 
+                *ngIf="form.get('nome')?.invalid && form.get('nome')?.touched" 
+                name="alert-circle-outline" 
+                class="invalid-icon">
+              </ion-icon>
             </div>
-            <div class="validation-msg" *ngIf="form.get('nome')?.valid">
+            <div class="validation-msg valid" *ngIf="form.get('nome')?.valid && form.get('nome')?.touched">
               <ion-icon name="checkmark-outline"></ion-icon> Nome preenchido.
+            </div>
+            <div class="validation-msg invalid" *ngIf="form.get('nome')?.invalid && form.get('nome')?.touched">
+              <ion-icon name="alert-circle-outline"></ion-icon> O nome completo é obrigatório (mínimo de 3 caracteres).
             </div>
           </div>
 
           <!-- Campo E-mail -->
           <div class="form-group">
             <label>E-mail</label>
-            <div class="input-box" [class.valid]="form.get('email')?.valid">
+            <div class="input-box" 
+                 [class.valid]="form.get('email')?.valid && form.get('email')?.touched"
+                 [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched">
               <input type="email" formControlName="email" placeholder="seu@email.com" />
               <ion-icon 
-                *ngIf="form.get('email')?.valid" 
+                *ngIf="form.get('email')?.valid && form.get('email')?.touched" 
                 name="checkmark-circle-outline" 
                 class="valid-icon">
               </ion-icon>
+              <ion-icon 
+                *ngIf="form.get('email')?.invalid && form.get('email')?.touched" 
+                name="alert-circle-outline" 
+                class="invalid-icon">
+              </ion-icon>
             </div>
-            <div class="validation-msg" *ngIf="form.get('email')?.valid">
+            <div class="validation-msg valid" *ngIf="form.get('email')?.valid && form.get('email')?.touched">
               <ion-icon name="checkmark-outline"></ion-icon> Formato de e-mail válido.
+            </div>
+            <div class="validation-msg invalid" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+              <ion-icon name="alert-circle-outline"></ion-icon> Informe um endereço de e-mail válido (ex: seu@email.com).
             </div>
           </div>
 
           <!-- Campo Senha -->
           <div class="form-group">
             <label>Senha</label>
-            <div class="input-box" [class.valid]="form.get('senha')?.valid">
+            <div class="input-box" 
+                 [class.valid]="form.get('senha')?.valid && form.get('senha')?.touched"
+                 [class.invalid]="form.get('senha')?.invalid && form.get('senha')?.touched">
               <input type="password" formControlName="senha" placeholder="••••••••••••" />
               <ion-icon 
-                *ngIf="form.get('senha')?.valid" 
+                *ngIf="form.get('senha')?.valid && form.get('senha')?.touched" 
                 name="checkmark-circle-outline" 
                 class="valid-icon">
               </ion-icon>
+              <ion-icon 
+                *ngIf="form.get('senha')?.invalid && form.get('senha')?.touched" 
+                name="alert-circle-outline" 
+                class="invalid-icon">
+              </ion-icon>
             </div>
-            <div class="validation-msg" *ngIf="form.get('senha')?.valid">
-              <ion-icon name="checkmark-outline"></ion-icon> 8 ou mais caracteres • letras e números
+            <div class="validation-msg valid" *ngIf="form.get('senha')?.valid && form.get('senha')?.touched">
+              <ion-icon name="checkmark-outline"></ion-icon> Senha forte configurada.
+            </div>
+            <div class="validation-msg invalid" *ngIf="form.get('senha')?.invalid && form.get('senha')?.touched">
+              <ion-icon name="alert-circle-outline"></ion-icon> A senha deve ter no mínimo 8 caracteres, combinando letras e números.
             </div>
           </div>
 
@@ -142,11 +187,16 @@
               Quero criar minha conta e usar minhas respostas para receber um diagnóstico e uma sugestão de estudos.
             </span>
           </div>
+          <div class="validation-msg invalid" *ngIf="!modoLogin && form.get('termos')?.invalid && form.get('termos')?.touched" style="margin-top: -16px; margin-bottom: 20px;">
+            <ion-icon name="alert-circle-outline"></ion-icon> É necessário aceitar os termos para prosseguir.
+          </div>
 
-          <!-- Botão Principal -->
-          <button type="submit" class="btn-submit">
-            {{ modoLogin ? 'Entrar na plataforma' : 'Criar conta e começar' }}
-            <ion-icon name="arrow-forward-outline"></ion-icon>
+          <!-- Botão Principal com Loading -->
+          <button type="submit" class="btn-submit" [disabled]="carregando">
+            <span *ngIf="!carregando">{{ modoLogin ? 'Entrar na plataforma' : 'Criar conta e começar' }}</span>
+            <span *ngIf="carregando">Processando...</span>
+            <ion-icon *ngIf="!carregando" name="arrow-forward-outline"></ion-icon>
+            <div *ngIf="carregando" class="btn-spinner"></div>
           </button>
 
           <p class="disclaimer">

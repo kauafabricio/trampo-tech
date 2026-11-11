@@ -256,14 +256,20 @@ ion-content.trilha-bg {
     border-radius: 8px;
     padding: 0 14px;
     height: 56px;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
 
     &.valid {
       border-color: #2E6F40;
     }
 
+    &.invalid {
+      border-color: #C53030;
+      background: #FFFBFB;
+    }
+
     &:focus-within {
       border-color: #A84300;
+      box-shadow: 0 0 0 3px rgba(168, 67, 0, 0.1);
     }
 
     input {
@@ -279,17 +285,140 @@ ion-content.trilha-bg {
       color: #2E6F40;
       font-size: 1.35rem;
     }
+
+    .invalid-icon {
+      color: #C53030;
+      font-size: 1.35rem;
+    }
   }
 
   .validation-msg {
     display: flex;
     align-items: center;
-    gap: 4px;
-    color: #2E6F40;
+    gap: 5px;
     font-size: 0.76rem;
     font-weight: 500;
     margin-top: 6px;
+
+    &.valid {
+      color: #2E6F40;
+    }
+
+    &.invalid {
+      color: #C53030;
+      font-weight: 600;
+    }
   }
+}
+
+/* Badge de Status da API */
+.api-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #F0EDE5;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #5C554E;
+  margin-bottom: 16px;
+  font-weight: 600;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.online {
+      background: #2E6F40;
+      box-shadow: 0 0 0 2px rgba(46, 111, 64, 0.2);
+    }
+
+    &.offline {
+      background: #C53030;
+      box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.2);
+    }
+  }
+
+  .offline-text {
+    color: #C53030;
+  }
+}
+
+/* Banner de Alerta Estruturado */
+.alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 22px;
+  animation: fadeIn 0.25s ease;
+
+  .alert-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .alert-content {
+    flex: 1;
+
+    .alert-text {
+      font-size: 0.85rem;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+  }
+
+  .btn-close-alert {
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &.danger {
+    background: #FFF5F5;
+    border: 1px solid #FEB2B2;
+    color: #9B2C2C;
+
+    .alert-icon, .btn-close-alert {
+      color: #9B2C2C;
+    }
+  }
+
+  &.warning {
+    background: #FFFAF0;
+    border: 1px solid #FEEBC8;
+    color: #9C4221;
+
+    .alert-icon, .btn-close-alert {
+      color: #9C4221;
+    }
+  }
+
+  &.success {
+    background: #F0FFF4;
+    border: 1px solid #C6F6D5;
+    color: #22543D;
+
+    .alert-icon, .btn-close-alert {
+      color: #22543D;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .checkbox-group {
@@ -325,13 +454,32 @@ ion-content.trilha-bg {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.92;
+    transform: translateY(-1px);
   }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: btnSpin 0.7s linear infinite;
+  }
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
 }
 
 .disclaimer {
