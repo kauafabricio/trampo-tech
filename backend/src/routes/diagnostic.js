@@ -37,7 +37,10 @@ export function createDiagnosticRouter({ trailService, requireAuth }) {
       if (err.message?.includes('não encontrado')) {
         return res.status(404).json({ message: err.message });
       }
-      return next(err);
+      console.error('[Diagnostic Submit Error]:', err.message);
+      return res.status(503).json({
+        message: 'A IA está com alta demanda momentânea nos servidores do Google. Por favor, tente novamente em alguns segundos.'
+      });
     }
   });
 

@@ -460,7 +460,7 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON):
   }
 
   /**
-   * Parse seguro de JSON — remove marcações ```json``` se presentes.
+   * Parse seguro de JSON — remove marcações ```json``` e extrai objeto delimitado por chaves se houver texto envolvente.
    */
   _parseJsonSafely(text) {
     if (!text || typeof text !== 'string') return null;
@@ -470,9 +470,20 @@ FORMATO DE RESPOSTA OBRIGATÓRIO (JSON):
     } else if (cleaned.startsWith('```')) {
       cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
+    cleaned = cleaned.trim();
     try {
       return JSON.parse(cleaned);
     } catch {
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const jsonSubstring = cleaned.substring(firstBrace, lastBrace + 1);
+          return JSON.parse(jsonSubstring);
+        } catch {
+          return null;
+        }
+      }
       return null;
     }
   }

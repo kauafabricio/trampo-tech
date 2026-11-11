@@ -11,7 +11,9 @@ export const allMigrations = [
  */
 export async function runMigrations(db) {
   const migrationsCol = db.collection('_migrations');
-  await migrationsCol.createIndex({ name: 1 }, { unique: true, name: 'idx_migrations_name_unique' });
+  try {
+    await migrationsCol.createIndex({ name: 1 }, { unique: true, name: 'idx_migrations_name_unique' });
+  } catch (_) {}
 
   const existingDocs = await migrationsCol.find({}).toArray();
   const appliedNames = new Set(existingDocs.map(doc => doc.name));

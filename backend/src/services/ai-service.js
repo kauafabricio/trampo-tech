@@ -248,7 +248,7 @@ Retorne exclusivamente o objeto JSON válido.`
   }
 
   /**
-   * Faz o parse de JSON de forma segura, removendo marcações eventuais ```json ... ```.
+   * Faz o parse de JSON de forma segura, removendo blocos markdown e extraindo o objeto JSON se houver texto envolvente.
    * @param {string} text
    */
   parseJsonSafely(text) {
@@ -259,9 +259,21 @@ Retorne exclusivamente o objeto JSON válido.`
     } else if (cleaned.startsWith('```')) {
       cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
+    cleaned = cleaned.trim();
     try {
       return JSON.parse(cleaned);
     } catch {
+      // Tenta localizar o primeiro '{' e o último '}' para isolar o JSON puro
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const jsonSubstring = cleaned.substring(firstBrace, lastBrace + 1);
+          return JSON.parse(jsonSubstring);
+        } catch {
+          return null;
+        }
+      }
       return null;
     }
   }

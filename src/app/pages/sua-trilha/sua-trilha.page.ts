@@ -62,6 +62,11 @@ export class SuaTrilhaPage {
   async ionViewWillEnter(): Promise<void> {
     this.menuCtrl.enable(false);
     this.loading = true;
+
+    // Lê trilha proposta passada via Router state (vinda direto do submit do diagnóstico)
+    const routerState = history.state;
+    const stateProposedTrail = routerState?.proposedTrail ?? null;
+
     try {
       this.usuarioLogado = await this.authService.restaurarSessao();
       if (!this.usuarioLogado) {
@@ -71,7 +76,10 @@ export class SuaTrilhaPage {
 
       this.comparison = await this.trailService.getComparisonOptions();
       this.defaultTrail = this.comparison.default_trail;
-      this.proposedTrail = this.comparison.proposed_trail;
+
+      // Prioriza o Router state (recém-gerado pelo diagnóstico) sobre o dado da API
+      // para evitar delay de propagação no banco e garantir exibição imediata
+      this.proposedTrail = this.comparison.proposed_trail ?? stateProposedTrail?.trail ?? stateProposedTrail ?? null;
 
       // Se há trilha personalizada proposta pela IA, recomenda e seleciona 'custom'
       if (this.proposedTrail) {
@@ -80,7 +88,13 @@ export class SuaTrilhaPage {
         this.trilhaSelecionada = 'default';
       }
     } catch {
-      await this.mostrarToast('Não foi possível carregar as opções de trilha. Verifique a conexão com o servidor.', 'danger');
+      // Fallback: usa o Router state caso a API falhe
+      if (stateProposedTrail) {
+        this.proposedTrail = stateProposedTrail?.trail ?? stateProposedTrail;
+        this.trilhaSelecionada = 'custom';
+      } else {
+        await this.mostrarToast('Não foi possível carregar as opções de trilha. Verifique a conexão com o servidor.', 'danger');
+      }
     } finally {
       this.loading = false;
     }

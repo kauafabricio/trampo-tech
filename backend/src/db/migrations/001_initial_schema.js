@@ -10,9 +10,32 @@ export const migration001 = {
    * @param {import('mongodb').Db} db
    */
   async up(db) {
+    // Helper para criar índice com segurança sem falhar por conflito de nome
+    async function safeCreateIndex(collection, key, options) {
+      try {
+        if (typeof collection.indexes === 'function') {
+          const existingIndexes = await collection.indexes();
+          const keyProps = Object.keys(key);
+          const match = existingIndexes.find(idx => {
+            if (!idx.key) return false;
+            const idxProps = Object.keys(idx.key);
+            return keyProps.length === idxProps.length && keyProps.every(k => idx.key[k] === key[k]);
+          });
+          if (match) return;
+        }
+        if (typeof collection.createIndex === 'function') {
+          await collection.createIndex(key, options);
+        }
+      } catch (err) {
+        if (!err.message?.includes('already exists')) {
+          throw err;
+        }
+      }
+    }
+
     // 1. Coleção users
     const users = db.collection('users');
-    await users.createIndex({ email: 1 }, { unique: true, name: 'idx_users_email_unique' });
+    await safeCreateIndex(users, { email: 1 }, { unique: true, name: 'idx_users_email_unique' });
 
     // Migração de compatibilidade retroativa para usuários legados
     await users.updateMany(
@@ -25,36 +48,36 @@ export const migration001 = {
 
     // 2. Coleção custom_trails (trilhas personalizadas geradas pela IA)
     const customTrails = db.collection('custom_trails');
-    await customTrails.createIndex(
+    await safeCreateIndex(customTrails,
       { user_id: 1, status: 1 },
       { name: 'idx_custom_trails_user_status' }
     );
-    await customTrails.createIndex(
+    await safeCreateIndex(customTrails,
       { user_id: 1, criado_em: -1 },
       { name: 'idx_custom_trails_user_created' }
     );
 
     // 3. Coleção user_progress (progresso do usuário na trilha ativa)
     const userProgress = db.collection('user_progress');
-    await userProgress.createIndex(
+    await safeCreateIndex(userProgress,
       { user_id: 1, trail_source: 1, custom_trail_id: 1 },
       { unique: true, name: 'idx_user_progress_unique_trail' }
     );
-    await userProgress.createIndex(
+    await safeCreateIndex(userProgress,
       { user_id: 1 },
       { name: 'idx_user_progress_user' }
     );
 
     // 4. Coleção diagnostic_results (resultado da avaliação diagnóstica)
     const diagnosticResults = db.collection('diagnostic_results');
-    await diagnosticResults.createIndex(
+    await safeCreateIndex(diagnosticResults,
       { user_id: 1, realizado_em: -1 },
       { name: 'idx_diagnostic_results_user_date' }
     );
 
     // 5. Coleção tutor_messages (histórico do chat com o tutor)
     const tutorMessages = db.collection('tutor_messages');
-    await tutorMessages.createIndex(
+    await safeCreateIndex(tutorMessages,
       { user_id: 1, criado_em: 1 },
       { name: 'idx_tutor_messages_user_date' }
     );

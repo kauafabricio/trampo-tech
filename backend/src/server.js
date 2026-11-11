@@ -89,6 +89,14 @@ const server = app.listen(Number(PORT), () => {
   }
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception capturada:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Server] Unhandled Rejection capturada:', reason);
+});
+
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     server.close(async () => {
