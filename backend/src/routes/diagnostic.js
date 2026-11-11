@@ -10,8 +10,9 @@ export function createDiagnosticRouter({ trailService, requireAuth }) {
   /**
    * GET /api/diagnostic/questions
    * Retorna as perguntas do diagnóstico.
+   * Não requer autenticação obrigatória para garantir que as perguntas sempre carreguem para o aluno.
    */
-  router.get('/questions', requireAuth, (_req, res) => {
+  router.get('/questions', (_req, res) => {
     const questions = trailService.getDiagnosticQuestions();
     return res.json({ questions });
   });

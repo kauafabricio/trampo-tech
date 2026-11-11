@@ -67,11 +67,8 @@ export class DiagnosticoInicialPage implements OnInit {
 
   async ionViewWillEnter(): Promise<void> {
     this.menuCtrl.enable(false);
-    if (!this.usuarioLogado) {
-      this.usuarioLogado = await this.authService.restaurarSessao();
-      if (!this.usuarioLogado) {
-        await this.router.navigate(['/cadastro']);
-      }
+    if (this.perguntas.length === 0) {
+      await this.carregarDados();
     }
   }
 
@@ -96,18 +93,20 @@ export class DiagnosticoInicialPage implements OnInit {
   }
 
   async carregarDados(): Promise<void> {
+    this.carregandoPerguntas = true;
     try {
-      this.carregandoPerguntas = true;
-      this.usuarioLogado = await this.authService.restaurarSessao();
-      if (!this.usuarioLogado) {
-        await this.router.navigate(['/cadastro']);
-        return;
-      }
       this.perguntas = await this.trailService.getDiagnosticQuestions();
-    } catch {
-      await this.mostrarToast('Não foi possível carregar as perguntas do diagnóstico.', 'danger');
+    } catch (err) {
+      console.error('Erro ao buscar perguntas do diagnóstico:', err);
+      await this.mostrarToast('Não foi possível carregar as perguntas do diagnóstico. Verifique sua conexão com o servidor.', 'danger');
     } finally {
       this.carregandoPerguntas = false;
+    }
+
+    try {
+      this.usuarioLogado = await this.authService.restaurarSessao();
+    } catch {
+      // Ignora erro se sessão estiver sendo restaurada em paralelo
     }
   }
 

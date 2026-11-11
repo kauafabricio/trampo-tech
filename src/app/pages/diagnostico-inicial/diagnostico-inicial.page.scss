@@ -355,6 +355,38 @@ ion-content.diag-bg {
   }
 }
 
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #FFF5F5;
+  border: 1px solid #FEB2B2;
+  border-radius: 12px;
+  color: #9B2C2C;
+  margin-bottom: 24px;
+
+  p {
+    margin: 0 0 16px;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .btn-retry {
+    padding: 10px 20px;
+    background: #A84300;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
 /* Barra de Ações */
 .actions-row {
   display: flex;

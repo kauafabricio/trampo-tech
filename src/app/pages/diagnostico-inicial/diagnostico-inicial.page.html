@@ -76,6 +76,14 @@
         <p>Carregando perguntas diagnósticas...</p>
       </div>
 
+      <!-- Estado de Erro / Retry -->
+      <div *ngIf="!carregandoPerguntas && perguntas.length === 0" class="error-state">
+        <p>Não foi possível carregar as perguntas no momento.</p>
+        <button type="button" class="btn-retry" (click)="carregarDados()">
+          <span>Tentar novamente</span>
+        </button>
+      </div>
+
       <!-- Lista de Perguntas -->
       <div *ngIf="!carregandoPerguntas" class="questions-list">
         <div *ngFor="let q of perguntas; let i = index" class="question-card">

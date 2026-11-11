@@ -33,7 +33,7 @@ function cookieOptions(production) {
     httpOnly: true,
     secure: production,
     sameSite: 'lax',
-    path: '/api/auth'
+    path: '/'
   };
 }
 
