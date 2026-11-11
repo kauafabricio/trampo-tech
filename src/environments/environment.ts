@@ -5,7 +5,7 @@
 const resolveApiUrl = (): string => {
   if (typeof window !== 'undefined' && window.location?.hostname) {
     const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+    if (host) {
       return `http://${host}:3000/api`;
     }
   }

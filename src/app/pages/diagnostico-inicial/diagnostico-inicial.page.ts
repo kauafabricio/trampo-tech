@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -160,8 +161,15 @@ export class DiagnosticoInicialPage implements OnInit {
       });
     } catch (err) {
       console.error('Erro na submissão do diagnóstico com IA:', err);
-      await this.mostrarToast('Diagnóstico processado. Redirecionando para sua trilha...', 'warning');
-      await this.router.navigate(['/sua-trilha']);
+      if (err instanceof HttpErrorResponse && err.status === 401) {
+        await this.mostrarToast('Sua sessão expirou ou não foi reconhecida. Faça login para continuar.', 'danger');
+        await this.router.navigate(['/cadastro']);
+        return;
+      }
+      const mensagemErro = err instanceof HttpErrorResponse && err.error?.message
+        ? err.error.message
+        : 'Não foi possível gerar a trilha personalizada com IA no momento. Tente novamente ou avance para a trilha padrão.';
+      await this.mostrarToast(mensagemErro, 'warning');
     } finally {
       this.gerandoTrilha = false;
       this.cdr.markForCheck();

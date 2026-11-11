@@ -60,6 +60,7 @@ function issueSession(res, user, jwtSecret, production) {
     ...cookieOptions(production),
     maxAge: SESSION_DURATION_MS
   });
+  return token;
 }
 
 function sendError(res, status, message) {
@@ -228,7 +229,9 @@ export function createApp({
         callback(null, origin === clientOrigin);
       }
     },
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
   }));
   app.use(express.json({ limit: '10kb' }));
   app.use(cookieParser());
@@ -260,7 +263,11 @@ export function createApp({
   const authRouter = express.Router();
 
   const requireAuth = async (req, res, next) => {
-    const token = req.cookies[SESSION_COOKIE];
+    let token = req.cookies[SESSION_COOKIE];
+    const authHeader = req.headers.authorization;
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7).trim();
+    }
     if (!token) {
       return sendError(res, 401, 'Autenticação necessária.');
     }
@@ -328,8 +335,8 @@ export function createApp({
       throw error;
     }
 
-    issueSession(res, user, jwtSecret, production);
-    return res.status(201).json({ user: publicUser(user) });
+    const token = issueSession(res, user, jwtSecret, production);
+    return res.status(201).json({ user: publicUser(user), token });
   });
 
   authRouter.post('/login', authRateLimit, async (req, res) => {
@@ -344,8 +351,8 @@ export function createApp({
       return sendError(res, 401, 'E-mail ou senha inválidos.');
     }
 
-    issueSession(res, user, jwtSecret, production);
-    return res.json({ user: publicUser(user) });
+    const token = issueSession(res, user, jwtSecret, production);
+    return res.json({ user: publicUser(user), token });
   });
 
   authRouter.post('/logout', (_req, res) => {

@@ -74,8 +74,10 @@ describe('API de Autenticação e Fundação de Trilhas', () => {
     assert.equal(body.user.trail_source, 'default', 'Novo usuário deve ter trail_source = "default"');
     assert.equal(body.user.custom_trail_id, null, 'Novo usuário não deve ter custom_trail_id');
     assert.equal('passwordHash' in body.user, false);
+    assert.ok(typeof body.token === 'string' && body.token.length > 20, 'Deve retornar o token JWT');
 
     userId = body.user.id;
+    const bearerToken = body.token;
     const setCookie = registration.headers.get('set-cookie');
     assert.match(setCookie, /HttpOnly/i);
     sessionCookie = setCookie.split(';', 1)[0];
@@ -87,6 +89,14 @@ describe('API de Autenticação e Fundação de Trilhas', () => {
     const sessionBody = await session.json();
     assert.equal(sessionBody.user.id, userId);
     assert.equal(sessionBody.user.trail_source, 'default');
+
+    // Valida autenticação alternativa via Authorization: Bearer <token>
+    const sessionBearer = await fetch(`${origin}/api/auth/me`, {
+      headers: { authorization: `Bearer ${bearerToken}` }
+    });
+    assert.equal(sessionBearer.status, 200);
+    const sessionBearerBody = await sessionBearer.json();
+    assert.equal(sessionBearerBody.user.id, userId);
   });
 
   it('GET /api/trails/active retorna a trilha padrão vinda do código com 5 módulos', async () => {

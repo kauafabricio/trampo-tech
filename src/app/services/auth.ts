@@ -16,6 +16,7 @@ export interface Usuario {
 
 interface UsuarioResponse {
   user: Usuario;
+  token?: string;
 }
 
 @Injectable({
@@ -23,13 +24,34 @@ interface UsuarioResponse {
 })
 export class AuthService {
   private readonly authUrl = `${environment.apiUrl}/auth`;
+  private readonly tokenKey = 'trampotech_token';
   private usuarioLogado: Usuario | null = null;
   private readonly http = inject(HttpClient);
+
+  getToken(): string | null {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(this.tokenKey);
+    }
+    return null;
+  }
+
+  setToken(token: string | null): void {
+    if (typeof localStorage !== 'undefined') {
+      if (token) {
+        localStorage.setItem(this.tokenKey, token);
+      } else {
+        localStorage.removeItem(this.tokenKey);
+      }
+    }
+  }
 
   async registrar(dados: Pick<Usuario, 'nome' | 'email' | 'termosAceitos'> & { senha: string }): Promise<Usuario> {
     const response = await firstValueFrom(
       this.http.post<UsuarioResponse>(`${this.authUrl}/register`, dados, { withCredentials: true })
     );
+    if (response.token) {
+      this.setToken(response.token);
+    }
     this.usuarioLogado = response.user;
     return response.user;
   }
@@ -42,15 +64,22 @@ export class AuthService {
         { withCredentials: true }
       )
     );
+    if (response.token) {
+      this.setToken(response.token);
+    }
     this.usuarioLogado = response.user;
     return response.user;
   }
 
   async logout(): Promise<void> {
-    await firstValueFrom(
-      this.http.post(`${this.authUrl}/logout`, {}, { withCredentials: true })
-    );
-    this.usuarioLogado = null;
+    try {
+      await firstValueFrom(
+        this.http.post(`${this.authUrl}/logout`, {}, { withCredentials: true })
+      );
+    } finally {
+      this.setToken(null);
+      this.usuarioLogado = null;
+    }
   }
 
   async restaurarSessao(): Promise<Usuario | null> {
@@ -62,6 +91,7 @@ export class AuthService {
       return response.user;
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 401) {
+        this.setToken(null);
         this.usuarioLogado = null;
         return null;
       }

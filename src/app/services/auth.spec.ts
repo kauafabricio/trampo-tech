@@ -41,9 +41,10 @@ describe('AuthService', () => {
 
     expect(request.request.method).toBe('POST');
     expect(request.request.withCredentials).toBe(true);
-    request.flush({ user });
+    request.flush({ user, token: 'mock-token' });
 
     expect(await registration).toEqual(user);
     expect(service.getUsuarioLogado()).toEqual(user);
+    expect(service.getToken()).toEqual('mock-token');
   });
 });
